@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="stylesheet" type="text/css" href="/snes.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+    ></script>
+    <style>
+      div.container {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+          "header"
+          "content"
+          "footer";
+        min-height: 100vh;
+      }
+
+      header {
+        grid-area: header;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      nav {
+        justify-self: end;
+      }
+
+      nav ul {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+      }
+
+      div.logo {
+        padding: 1rem 0;
+      }
+
+      nav li {
+        height: 3.5rem;
+      }
+
+      nav li a {
+        display: inline-block;
+        line-height: 3.5rem;
+      }
+
+      section.content {
+        grid-area: content;
+        padding: 4rem 2rem;
+      }
+
+      footer {
+        grid-area: footer;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      /* Tablet and up */
+      @media (min-width: 768px) {
+      }
+
+      /* Desktop */
+      @media (min-width: 1024px) {
+        div.container {
+          grid-template-columns: repeat(12, 1fr);
+          grid-template-areas:
+            "header header header header header header header header header header header header"
+            "content content content content content content content content content content content content"
+            "footer footer footer footer footer footer footer footer footer footer footer footer";
+        }
+
+        header {
+          padding: 1.5rem 4rem;
+        }
+
+        content {
+          padding-left: 4rem;
+          padding-right: 4rem;
+        }
+      }
+    </style>
+    <slot name="head" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/"><div class="logo">badblocks.dev</div></a>
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/contact">Contact</a></li>
+            <li><a href="https://git.badblocks.dev">Git</a></li>
+          </ul>
+        </nav>
+      </header>
+      <section id="content" class="content">
+        <slot name="content" />
+      </section>
+      <footer>
+        <p>
+          &copy; <script is:inline>
+            document.write(new Date().getFullYear());
+          </script>
+          badblocks
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

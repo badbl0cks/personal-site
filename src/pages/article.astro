@@ -1,0 +1,92 @@
+---
+import Layout from "../layouts/BaseLayout.astro";
+---
+
+<Layout>
+  <title slot="head">Lorem Ipsum</title>
+  <style>
+    div.content {
+      display: grid;
+      grid-template-columns: minmax(1rem, 1fr) minmax(auto, 70ch) minmax(
+          1rem,
+          1fr
+        );
+      grid-gap: 1rem;
+      font-size: 12px;
+    }
+  </style>
+  <style>
+    p,
+    h1 {
+      grid-column: 2;
+      margin-bottom: 1.5rem;
+    }
+
+    img {
+      grid-column: 1 / 4;
+      width: 100%;
+      max-width: 100ch;
+      justify-self: center;
+    }
+  </style>
+  <Fragment slot="content">
+    <h1>Lorem Ipsum</h1>
+    <p>
+      "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet,
+      consectetur, adipisci velit..." "There is no one who loves pain itself,
+      who seeks after it and wants to have it, simply because it is pain..."
+    </p>
+    <p>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel
+      justo a diam dapibus posuere eget ut tortor. Nam at orci ligula. Nulla
+      sollicitudin quam at venenatis aliquam. Quisque aliquam accumsan eros, id
+      dignissim elit lobortis sed. Proin suscipit ex porta velit lobortis, ut
+      eleifend ipsum dapibus. Lorem ipsum dolor sit amet, consectetur adipiscing
+      elit. Donec quis nunc dapibus lectus semper viverra sodales eu enim. Ut ac
+      metus sed libero luctus auctor. Sed varius turpis nisi, nec rhoncus metus
+      volutpat nec. Quisque sagittis pulvinar magna a egestas. Vestibulum varius
+      pretium sapien eget aliquam. Donec tempus quis tellus ac pretium. Sed at
+      ex sed ipsum facilisis euismod. Nam et sollicitudin velit. Interdum et
+      malesuada fames ac ante ipsum primis in faucibus. Nam ultricies, felis et
+      condimentum pharetra, est neque efficitur eros, id porttitor erat tellus
+      vel nisi.
+    </p><p>
+      Integer tincidunt mi at dolor porta elementum. Ut vehicula hendrerit
+      varius. Sed dictum elementum justo ut dignissim. In dapibus sem ultrices
+      libero volutpat, sit amet feugiat augue venenatis. Cras vitae lacus sit
+      amet orci accumsan eleifend varius vitae nisl. Quisque posuere, sem ac
+      finibus dictum, lectus arcu efficitur quam, at posuere neque orci ut enim.
+      Nulla vitae egestas justo. Sed at dolor eget dui malesuada tincidunt. In
+      vel pretium sem. In sapien augue, scelerisque nec tempor at, fringilla
+      tincidunt nunc. Proin sit amet aliquam ipsum, vel fringilla velit. Mauris
+      a pharetra lectus. Aenean tempor maximus tellus non pretium. Sed ut ex
+      pellentesque, dictum tortor in, cursus nisl. Sed ante velit, pretium at
+      sollicitudin id, rhoncus eget dolor. Sed ac metus metus. Nulla tristique
+      consequat nisi id tincidunt. Suspendisse sodales lorem tortor.
+    </p><p>
+      Proin mollis odio orci, vel tempor risus egestas vehicula. Vivamus dictum
+      ligula et blandit accumsan. Pellentesque placerat vulputate neque. Integer
+      varius risus ac suscipit gravida. Nunc vitae tempus diam, eu rhoncus
+      risus. Donec dignissim lorem turpis, sit amet tempor dolor hendrerit quis.
+      Class aptent taciti sociosqu ad litora torquent per conubia nostra, per
+      inceptos himenaeos. Quisque in auctor lacus.
+    </p><p>
+      Suspendisse tincidunt diam ac massa tristique, at volutpat libero varius.
+      Cras eros metus, sodales semper lacus eu, gravida ultrices orci. Integer
+      elementum tristique ipsum vehicula pellentesque. Sed elementum auctor
+      velit eget elementum. Nunc mi dolor, porttitor eget euismod sit amet,
+      molestie non felis. Nulla tempor, tortor et congue viverra, diam orci
+      finibus lectus, sed dictum lacus velit eget nulla. Interdum et malesuada
+      fames ac ante ipsum primis in faucibus.
+    </p><p>
+      Maecenas sodales, sem et pulvinar pellentesque, massa massa rhoncus velit,
+      in efficitur odio magna sed eros. Nam efficitur sem sit amet mi suscipit,
+      nec molestie orci aliquet. Morbi sed feugiat quam. Phasellus a suscipit
+      mauris, sed efficitur magna. Sed ac dapibus erat. Mauris tincidunt viverra
+      consequat. Aenean venenatis in elit eu luctus. Aenean convallis aliquam
+      ante, at bibendum mi pretium nec. Mauris et aliquam sem. Proin accumsan
+      finibus erat in elementum. Etiam ut augue tincidunt, ornare magna sit
+      amet, vestibulum mi. Morbi vitae vehicula augue.
+    </p>
+  </Fragment>
+</Layout>
