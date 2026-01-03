@@ -5,18 +5,84 @@ import Layout from "../layouts/BaseLayout.astro";
 <Layout>
   <title slot="head">Home</title>
   <style>
-    .hero {
-      grid-area: hero;
-      display: grid;
-      place-items: center;
-      padding: 4rem 2rem;
-      min-height: 60vh;
-      background: #f8f9fa;
+    :root {
+      --scroll-speed: 10s;
+    }
+    .parallax-container {
+      position: relative;
+      height: 208px;
+      width: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 1600vw; /* bg images are 160px, so use 16*vw for smooth scrolling */
+      background-repeat: round;
+      background-position: bottom;
+      background-size: contain;
+    }
+
+    .layer-back {
+      background-image: url("/bg-clouds.png");
+      z-index: 1;
+      animation: scroll calc(var(--scroll-speed) * 42) linear infinite;
+    }
+
+    .layer-middle {
+      background-image: url("/bg-mountains.png");
+      z-index: 2;
+      animation: scroll calc(var(--scroll-speed) * 32) linear infinite;
+    }
+
+    .layer-front {
+      background-image: url("/bg-trees.png");
+      z-index: 3;
+      animation: scroll calc(var(--scroll-speed) * 11) linear infinite;
+    }
+
+    @keyframes scroll {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    section#hero {
+      position: relative;
+      padding: 2rem;
+      background-color: #f8f9fa;
+      z-index: -1;
+    }
+
+    div.hero {
+      position: relative;
+      top: calc(-4 * 0.9rem);
+      left: 12px;
+      width: calc(100% - 24px);
+    }
+    div.hero > h1 {
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    div.hero > p {
+      font-size: 16px;
     }
   </style>
   <Fragment slot="content">
-    <section class="hero" id="hero">
-      <div>
+    <section id="hero">
+      <div class="parallax-container">
+        <div class="layer layer-back"></div>
+        <div class="layer layer-middle"></div>
+        <div class="layer layer-front"></div>
+      </div>
+      <div class="hero">
         <h1>Lorem Ipsum</h1>
         <p>
           Neque porro quisquam est qui dolorem ipsum quia dolor sit amet,
