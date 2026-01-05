@@ -5,20 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="stylesheet" type="text/css" href="/snes.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
-    ></script>
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      div.container {
+      :root {
+        --min-body-width: 30ch;
+        --max-body-width: 120ch;
+        font-size: 16px;
+        font-family: "VT323", monospace;
+        font-weight: 400;
+        font-style: normal;
+      }
+      body {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns:
+          minmax(0.8rem, 1fr)
+          minmax(var(--min-body-width), var(--max-body-width))
+          minmax(0.8rem, 1fr);
         grid-template-rows: auto 1fr auto;
         grid-template-areas:
-          "header"
-          "content"
-          "footer";
+          ". header ."
+          ". content ."
+          ". footer .";
         min-height: 100vh;
-        width: 100vw;
+        place-items: center;
+        width: 100%;
+        min-width: var(--min-body-width);
         position: absolute;
         top: 0;
         left: 0;
@@ -26,100 +44,64 @@
 
       header {
         grid-area: header;
-        display: grid;
-        grid-template-columns: auto 1fr;
-        align-items: center;
-        gap: 2rem;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid #e5e5e5;
       }
 
-      nav {
-        justify-self: end;
-      }
-
-      nav ul {
-        display: flex;
-        gap: 2rem;
-        list-style: none;
-      }
-
-      div.logo {
-        padding: 1rem 0;
+      header h1 {
+        text-transform: none;
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
       }
 
       nav li {
-        height: 3.5rem;
+        align-content: center;
       }
 
-      nav li a {
-        display: inline-block;
-        line-height: 3.5rem;
+      nav li select {
+        margin: 0;
       }
 
-      section.content {
+      main {
         grid-area: content;
-        padding: 4rem 2rem;
       }
 
       footer {
         grid-area: footer;
         display: grid;
         place-items: center;
-        padding: 2rem;
-        border-top: 1px solid #e5e5e5;
-      }
-
-      /* Tablet and up */
-      @media (min-width: 768px) {
-      }
-
-      /* Desktop */
-      @media (min-width: 1024px) {
-        div.container {
-          grid-template-columns: repeat(12, 1fr);
-          grid-template-areas:
-            "header header header header header header header header header header header header"
-            "content content content content content content content content content content content content"
-            "footer footer footer footer footer footer footer footer footer footer footer footer";
-        }
-
-        header {
-          padding: 1.5rem 4rem;
-        }
-
-        content {
-          padding-left: 4rem;
-          padding-right: 4rem;
-        }
       }
     </style>
     <slot name="head" />
   </head>
-  <body>
-    <div class="container">
-      <header>
-        <a href="/"><div class="logo">badblocks.dev</div></a>
-        <nav>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/projects">Projects</a></li>
-            <li><a href="/contact">Contact</a></li>
-            <li><a href="https://git.badblocks.dev">Git</a></li>
-          </ul>
-        </nav>
-      </header>
-      <section id="content" class="content">
-        <slot name="content" />
-      </section>
-      <footer>
-        <p>
-          &copy; <script is:inline>
-            document.write(new Date().getFullYear());
-          </script>
-          badblocks
-        </p>
-      </footer>
-    </div>
+  <body x-data="{ theme: 'winternight'}">
+    <header>
+      <h1><a href="/">badblocks.dev</a></h1>
+      <nav>
+        <ul>
+          <li>
+            <select id="theme" x-model="theme">
+              <option value="winternight">Winternight</option>
+              <option value="sunnyvale-forest">SunnyVale</option>
+              <option value="city-destroyed">Apocalypse</option>
+            </select>
+          </li>
+          <li><a href="/tools">Tools</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="https://git.badblocks.dev" target="_blank">Git</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main id="content">
+      <slot name="content" />
+    </main>
+    <footer>
+      <p>
+        &copy; <script is:inline>
+          document.write(new Date().getFullYear());
+        </script>
+        badblocks
+      </p>
+      <p>Made from scratch with BAHA: Bun, Astro, Htmx, and Alpine!</p>
+    </footer>
   </body>
 </html>

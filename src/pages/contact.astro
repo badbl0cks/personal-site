@@ -1,24 +1,52 @@
 ---
 import Layout from "../layouts/BaseLayout.astro";
+export const prerender = false;
 ---
 
 <Layout>
   <title slot="head">Contact</title>
   <style>
-    .contact {
-      grid-area: contact;
+    form {
       display: grid;
-      place-items: center;
-      padding: 4rem 2rem;
-      background: #f8f9fa;
+      gap: 1rem;
+      width: 100%;
+      margin: 0 auto;
+      grid-template-areas:
+        "header header "
+        "name phone"
+        "msg msg"
+        " . submit";
+    }
+    label[for="name"] {
+      grid-area: name;
+    }
+    label[for="phone"] {
+      grid-area: phone;
+    }
+    label[for="msg"] {
+      grid-area: msg;
+    }
+    button#submit {
+      grid-area: submit;
     }
   </style>
   <Fragment slot="content">
-    <section class="contact" id="contact">
-      <div>
-        <h2>Contact</h2>
-        <p>Contact information here</p>
-      </div>
-    </section>
+    <h2>Contact</h2>
+    <p>Use the below form to shoot me a quick text!</p>
+    <form x-data="{}">
+      <label for="name">
+        Name
+        <input type="text" id="name" placeholder="John Doe" />
+      </label>
+      <label for="phone">
+        Phone
+        <input type="text" id="phone" placeholder="555-555-5555" />
+      </label>
+      <label for="msg">
+        Msg
+        <textarea id="msg" placeholder="I think badblocks rocks!"></textarea>
+      </label>
+      <button id="submit" type="submit">Submit</button>
+    </form>
   </Fragment>
 </Layout>

@@ -6,11 +6,63 @@ import Layout from "../layouts/BaseLayout.astro";
   <title slot="head">Home</title>
   <style>
     :root {
-      --scroll-speed: 10s;
+      --scroll-multiplier: 5;
+      --theme: winternight;
     }
+
+    .parallax-theme-winternight {
+      --layer-0-speed: 6250s;
+      --layer-1-speed: 1250s;
+      --layer-2-speed: 500s;
+      --layer-3-speed: 250s;
+      --layer-4-speed: 80s;
+      --layer-0-url: url("/parallax/winternight/0-sky.png");
+      --layer-1-url: url("/parallax/winternight/1-backmountain.png");
+      --layer-2-url: url("/parallax/winternight/2-midmountain.png");
+      --layer-3-url: url("/parallax/winternight/3-midforest.png");
+      --layer-4-url: url("/parallax/winternight/4-frontfloor.png");
+      --parallax-width: calc(3800px * 10);
+    }
+
+    .parallax-theme-sunnyvale-forest {
+      --layer-0-speed: 2000s;
+      --layer-1-speed: 400s;
+      --layer-2-speed: 50s;
+      --layer-0-url: url("/parallax/sunnyvale-forest/0-clouds.png");
+      --layer-1-url: url("/parallax/sunnyvale-forest/1-mountains.png");
+      --layer-2-url: url("/parallax/sunnyvale-forest/2-trees.png");
+      --parallax-width: calc(160px * 200);
+    }
+
+    .parallax-theme-city-destroyed {
+      --layer-0-speed: 1000s;
+      --layer-1-speed: 275s;
+      --layer-2-speed: 250s;
+      --layer-3-speed: 250s;
+      --layer-4-speed: 250s;
+      --layer-5-speed: 100s;
+      --layer-0-url: url("/parallax/city-destroyed/0-sky.png");
+      --layer-1-url: url("/parallax/city-destroyed/1-buildingssmoke.png");
+      --layer-2-url: url("/parallax/city-destroyed/2-water.png");
+      --layer-3-url: url("/parallax/city-destroyed/3-buildings.png");
+      --layer-4-url: url("/parallax/city-destroyed/4-buildingreflection.png");
+      --layer-5-url: url("/parallax/city-destroyed/5-frontsmoke.png");
+      --parallax-width: calc(3800px * 10);
+    }
+
+    .parallax-theme-city-destroyed .layer.layer-1,
+    .parallax-theme-city-destroyed .layer.layer-3,
+    .parallax-theme-city-destroyed .layer.layer-4 {
+      background-repeat: repeat-x;
+    }
+
+    .parallax-theme-city-destroyed .layer.layer-4 {
+      background-position-y: 16rem;
+    }
+
     .parallax-container {
       position: relative;
-      height: 208px;
+      height: 30rem;
       width: 100%;
       overflow: hidden;
       z-index: 0;
@@ -21,28 +73,52 @@ import Layout from "../layouts/BaseLayout.astro";
       top: 0;
       left: 0;
       height: 100%;
-      width: 1600vw; /* bg images are 160px, so use 16*vw for smooth scrolling */
+      width: var(--parallax-width);
       background-repeat: round;
       background-position: bottom;
       background-size: contain;
     }
 
-    .layer-back {
-      background-image: url("/bg-clouds.png");
+    .layer-0 {
+      background-image: var(--layer-0-url);
       z-index: 1;
-      animation: scroll calc(var(--scroll-speed) * 42) linear infinite;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-0-speed))
+        linear infinite;
     }
 
-    .layer-middle {
-      background-image: url("/bg-mountains.png");
+    .layer-1 {
+      background-image: var(--layer-1-url);
       z-index: 2;
-      animation: scroll calc(var(--scroll-speed) * 32) linear infinite;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-1-speed))
+        linear infinite;
     }
 
-    .layer-front {
-      background-image: url("/bg-trees.png");
+    .layer-2 {
+      background-image: var(--layer-2-url);
       z-index: 3;
-      animation: scroll calc(var(--scroll-speed) * 11) linear infinite;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-2-speed))
+        linear infinite;
+    }
+
+    .layer-3 {
+      background-image: var(--layer-3-url);
+      z-index: 4;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-3-speed))
+        linear infinite;
+    }
+
+    .layer-4 {
+      background-image: var(--layer-4-url);
+      z-index: 5;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-4-speed))
+        linear infinite;
+    }
+
+    .layer-5 {
+      background-image: var(--layer-5-url);
+      z-index: 6;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-5-speed))
+        linear infinite;
     }
 
     @keyframes scroll {
@@ -53,42 +129,22 @@ import Layout from "../layouts/BaseLayout.astro";
         transform: translateX(-50%);
       }
     }
-
-    section#hero {
-      position: relative;
-      padding: 2rem;
-      background-color: #f8f9fa;
-      z-index: -1;
-    }
-
-    div.hero {
-      position: relative;
-      top: calc(-4 * 0.9rem);
-      left: 12px;
-      width: calc(100% - 24px);
-    }
-    div.hero > h1 {
-      color: #fff;
-      margin-bottom: 16px;
-    }
-    div.hero > p {
-      font-size: 16px;
-    }
   </style>
   <Fragment slot="content">
-    <section id="hero">
-      <div class="parallax-container">
-        <div class="layer layer-back"></div>
-        <div class="layer layer-middle"></div>
-        <div class="layer layer-front"></div>
+    <article id="hero">
+      <div class="parallax-container" :class="'parallax-theme-' + theme">
+        <div class="layer layer-0"></div>
+        <div class="layer layer-1"></div>
+        <div class="layer layer-2"></div>
+        <div class="layer layer-3"></div>
+        <div class="layer layer-4"></div>
+        <div class="layer layer-5"></div>
       </div>
-      <div class="hero">
-        <h1>Lorem Ipsum</h1>
-        <p>
-          Neque porro quisquam est qui dolorem ipsum quia dolor sit amet,
-          consectetur, adipisci velit.
-        </p>
-      </div>
-    </section>
+      <h2>Lorem Ipsum</h2>
+      <p>
+        Neque porro quisquam est qui dolorem ipsum quia dolor sit amet,
+        consectetur, adipisci velit.
+      </p>
+    </article>
   </Fragment>
 </Layout>

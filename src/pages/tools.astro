@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/BaseLayout.astro";
+---
+
+<Layout>
+  <title slot="head">Tools</title>
+  <style>
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 2rem auto 0;
+    }
+  </style>
+  <Fragment slot="content">
+    <section class="tools" id="tools">
+      <h2>Tools</h2>
+      <div class="tools-grid">
+        <div class="tool-card">Tool 1</div>
+        <div class="tool-card">Tool 2</div>
+        <div class="tool-card">Tool 3</div>
+      </div>
+    </section>
+  </Fragment>
+</Layout>
