@@ -1,6 +1,42 @@
 ---
-import Layout from "../layouts/BaseLayout.astro";
+import Layout from "@layouts/BaseLayout.astro";
+import SmsClient from "@lib/SmsGatewayClient.ts";
 export const prerender = false;
+
+const errors = { name: "", phone: "", msg: "", form: "" };
+let success = false;
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const name = data.get("name")?.toString();
+    const phone = data.get("phone")?.toString();
+    const msg = data.get("msg")?.toString();
+    
+    if (typeof name !== "string" || name.length < 1) {
+      errors.name += "Please enter a name. ";
+    }
+    if (typeof phone !== "string") {
+      errors.phone += "Phone is not valid. ";
+    }
+    if (typeof msg !== "string" || msg.length < 20) {
+      errors.msg += "Message must be at least 20 characters. ";
+    }
+
+    const hasErrors = Object.values(errors).some(msg => msg) 
+    if (!hasErrors) {
+      const smsClient = new SmsClient();
+      const message = "Web message from " + name + " (" + phone + "):\n\n" + msg;
+      const result = await smsClient.sendSMS(message);
+      if (!result.success) {
+        errors.form += "Sending SMS failed; API returned error. "
+      } else { success = true; }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      errors.form += error.message;
+    }
+  }
+}
 ---
 
 <Layout>
@@ -17,6 +53,9 @@ export const prerender = false;
         "msg msg"
         " . submit";
     }
+    div {
+      grid-area: header;
+    }
     label[for="name"] {
       grid-area: name;
     }
@@ -32,21 +71,30 @@ export const prerender = false;
   </style>
   <Fragment slot="content">
     <h2>Contact</h2>
-    <p>Use the below form to shoot me a quick text!</p>
-    <form x-data="{}">
+    {!success && <form method="post" x-data="{}">
+      <div>
+        <p>Use the below form to shoot me a quick text!</p>
+        {errors.form && <p>{errors.form}</p>}
+      </div>
       <label for="name">
         Name
-        <input type="text" id="name" placeholder="John Doe" />
+        <input type="text" id="name" name="name" placeholder="Bad Blocks" />
+        {errors.name && <p>{errors.name}</p>}
       </label>
       <label for="phone">
         Phone
-        <input type="text" id="phone" placeholder="555-555-5555" />
+        <input type="text" id="phone" name="phone" placeholder="555-555-5555" />
+        {errors.phone && <p>{errors.phone}</p>}
       </label>
       <label for="msg">
         Msg
-        <textarea id="msg" placeholder="I think badblocks rocks!"></textarea>
+        <textarea id="msg" name="msg" placeholder="I think badblocks rocks!"></textarea>
+        {errors.msg && <p>{errors.msg}</p>}
+      </label>
+      <label for="cap">
+        <cap-widget data-cap-api-endpoint="<your cap endpoint>"></cap-widget>
       </label>
       <button id="submit" type="submit">Submit</button>
-    </form>
+    </form> || <p>Your message has been sent successfully!</p>}
   </Fragment>
 </Layout>

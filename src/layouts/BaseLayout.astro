@@ -13,6 +13,12 @@
       href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
       rel="stylesheet"
     />
+    <script>
+      const yearSpan = document.querySelector("#copyright-year");
+      if (yearSpan) {
+        yearSpan.innerHTML = new Date().getFullYear().toString();
+      }
+    </script>
     <style>
       :root {
         --min-body-width: 30ch;
@@ -96,9 +102,7 @@
     </main>
     <footer>
       <p>
-        &copy; <script is:inline>
-          document.write(new Date().getFullYear());
-        </script>
+        &copy; <span id="copyright-year">2026</span>
         badblocks
       </p>
       <p>Made from scratch with BAHA: Bun, Astro, Htmx, and Alpine!</p>
