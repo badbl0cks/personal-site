@@ -1,0 +1,9 @@
+services:
+  personal-site:
+    build: .
+    ports:
+      - 4321:4321
+    restart: no
+    logging:
+      options:
+        max-size: 1g
