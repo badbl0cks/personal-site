@@ -1,6 +1,7 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
 import SmsClient from "@lib/SmsGatewayClient.ts";
+import CapServer from "@lib/cap";
 export const prerender = false;
 
 const errors = { name: "", phone: "", msg: "", form: "" };
@@ -9,8 +10,13 @@ if (Astro.request.method === "POST") {
   try {
     const data = await Astro.request.formData();
     const name = data.get("name")?.toString();
+    const capToken = data.get("cap-token")?.toString();
     const phone = data.get("phone")?.toString();
     const msg = data.get("msg")?.toString();
+    
+    if (typeof capToken !== "string" || !(await CapServer.validateToken(capToken)).success) {
+      throw new Error("invalid cap token");
+    }
     
     if (typeof name !== "string" || name.length < 1) {
       errors.name += "Please enter a name. ";
@@ -38,7 +44,29 @@ if (Astro.request.method === "POST") {
   }
 }
 ---
-
+<script>import CapWidget from "@cap.js/widget";</script>
+<style>
+  cap-widget {
+    --cap-background: #fdfdfd;
+    --cap-border-color: var(--border-color);
+    --cap-border-radius: 4px;
+    --cap-widget-height: 100%;
+    --cap-widget-width: 100%;
+    --cap-widget-padding: 10px 20px;
+    --cap-gap: 14px;
+    --cap-color: #212121;
+    --cap-checkbox-size: 25px;
+    --cap-checkbox-border: 1px solid #aaaaaad1;
+    --cap-checkbox-border-radius: 4px;
+    --cap-checkbox-background: #fafafa91;
+    --cap-checkbox-margin: 2px;
+    --cap-font: system, -apple-system, "BlinkMacSystemFont", ".SFNSText-Regular", "San Francisco",
+      "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", "Ubuntu", "arial", sans-serif;
+    --cap-spinner-color: #000;
+    --cap-spinner-background-color: #eee;
+    --cap-spinner-thickness: 5px;
+  }
+</style>
 <Layout>
   <title slot="head">Contact</title>
   <style>
@@ -48,10 +76,10 @@ if (Astro.request.method === "POST") {
       width: 100%;
       margin: 0 auto;
       grid-template-areas:
-        "header header "
-        "name phone"
-        "msg msg"
-        " . submit";
+        "header header header header "
+        "name name phone phone"
+        "msg msg msg msg"
+        "captcha captcha submit submit";
     }
     div {
       grid-area: header;
@@ -64,6 +92,10 @@ if (Astro.request.method === "POST") {
     }
     label[for="msg"] {
       grid-area: msg;
+    }
+    label[for="captcha"] {
+      grid-area: captcha;
+      margin-bottom: 0;
     }
     button#submit {
       grid-area: submit;
@@ -91,8 +123,8 @@ if (Astro.request.method === "POST") {
         <textarea id="msg" name="msg" placeholder="I think badblocks rocks!"></textarea>
         {errors.msg && <p>{errors.msg}</p>}
       </label>
-      <label for="cap">
-        <cap-widget data-cap-api-endpoint="<your cap endpoint>"></cap-widget>
+      <label for="captcha">
+        <cap-widget id="captcha" data-cap-api-endpoint="/cap/"></cap-widget>
       </label>
       <button id="submit" type="submit">Submit</button>
     </form> || <p>Your message has been sent successfully!</p>}
