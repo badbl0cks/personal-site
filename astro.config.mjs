@@ -41,6 +41,10 @@ export default defineConfig({
         context: "server",
         access: "secret",
       }),
+      OTP_SUPER_SECRET_SALT: envField.string({
+        context: "server",
+        access: "secret",
+      }),
     },
   },
   integrations: [alpinejs(), sitemap(), htmx(), db()],

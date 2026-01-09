@@ -2,7 +2,6 @@ import Client from "android-sms-gateway";
 import {
   ANDROID_SMS_GATEWAY_LOGIN,
   ANDROID_SMS_GATEWAY_PASSWORD,
-  ANDROID_SMS_GATEWAY_RECIPIENT_PHONE,
   ANDROID_SMS_GATEWAY_URL,
 } from "astro:env/server";
 import httpFetchClient from "@lib/HttpFetchClient";
@@ -19,9 +18,9 @@ class SmsClient {
     );
   }
 
-  async sendSMS(message: string) {
+  async sendSMS(phoneNumber: string, message: string) {
     const bundle = {
-      phoneNumbers: [ANDROID_SMS_GATEWAY_RECIPIENT_PHONE], // hard-coded on purpose ;)
+      phoneNumbers: [phoneNumber],
       message: message,
     };
     try {
