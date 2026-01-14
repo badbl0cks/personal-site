@@ -1,229 +1,52 @@
 ---
-import SmsClient from "@lib/SmsGatewayClient.ts";
-import CapServer from "@lib/CapAdapter";
-import Otp, { verifyOtp } from "@lib/Otp.ts"
-import { OTP_SUPER_SECRET_SALT, ANDROID_SMS_GATEWAY_RECIPIENT_PHONE } from "astro:env/server";
+import { POST} from "@pages/endpoints/contact";
+import type { ContactFormErrors, ContactFormState, ContactFormResult } from "../types/ContactForm";
+type Props = Record<string, never>;
 
-type FormErrors = { name: string; phone: string; msg: string; code: string; captcha: string; form: string };
-
-type ValidationFailure = { success: false; message: string; field?: keyof FormErrors };
-type ValidationSuccess<T = void> = { success: true; data: T; message?: string };
-type ValidationResult<T = void> = ValidationSuccess<T> | ValidationFailure;
-
-const OTP_SALT = OTP_SUPER_SECRET_SALT;
-if (!OTP_SALT) {
-  throw new Error("OTP secret salt configuration is missing.");
-}
-
-function makeSafeAndCheckPhoneNumber(unsafePhoneNumber: string): ValidationResult<{ phoneNumber: string }> {
-  const trimmed = unsafePhoneNumber.trim();
-  const phoneNumberResult = Otp.validatePhoneNumber(trimmed);
-
-  if (!phoneNumberResult.success || typeof phoneNumberResult.validatedPhoneNumber !== 'string') {
-    return { success: false, message: "Invalid phone number.", field: "phone" };
-  }
-
-  const { validatedPhoneNumber } = phoneNumberResult;
-
-  if (Otp.isRateLimitedForOtp(validatedPhoneNumber)) {
-    return { success: false, message: "Too many OTP requests. Please try again later.", field: "phone" };
-  }
-  
-  if (Otp.isRateLimitedForMsgs(validatedPhoneNumber)) {
-    return { success: false, message: "Too many messages. Please try again later.", field: "phone" };
-  }
-
-  return { success: true, data: { phoneNumber: validatedPhoneNumber } };
-}
-
-function makeSafeAndCheck(unsafeName: string, unsafePhoneNumber: string, unsafeCode: string, unsafeMsg: string): ValidationResult<{ name: string; phoneNumber: string; code: string; msg: string }> {
-  const phoneNumberResult = makeSafeAndCheckPhoneNumber(unsafePhoneNumber);
-
-  if (!phoneNumberResult.success) {
-    return phoneNumberResult;
-  }
-
-  const { phoneNumber } = phoneNumberResult.data;
-  const name = unsafeName.trim();
-  const msg = unsafeMsg.trim();
-  const code = unsafeCode.trim();
-
-  const printableAsciiRegex = /^[\x20-\x7E\n\r]*$/;
-  const sixDigitsOnlyRegex = /^[0-9]{6}$/;
-
-  if (!sixDigitsOnlyRegex.test(code)) {
-    return { success: false, message: "OTP code invalid.", field: "code" };
-  }
-
-  if (!printableAsciiRegex.test(name)) {
-    return { success: false, message: "Name contains non-ASCII or non-printable characters.", field: "name" };
-  }
-
-  if (!printableAsciiRegex.test(msg)) {
-    return { success: false, message: "Message contains non-ASCII or non-printable characters.", field: "msg" };
-  }
-
-  if (name.length < 2 || name.length > 25) {
-    return { success: false, message: "Please enter a valid name.", field: "name" };
-  }
-
-  if (msg.length > 500) {
-    return { success: false, message: "Message cannot be longer than 500 characters.", field: "msg" };
-  }
-
-  if (msg.length < 10) {
-    return { success: false, message: "Message is too short.", field: "msg" };
-  }
-
-  if (/([a-zA-Z])\1{4,}/.test(msg)) {
-    return { success: false, message: "Message contains excessive repeated characters.", field: "msg" };
-  }
-
-  const uppercaseRatio = (msg.match(/[A-Z]/g) || []).length / msg.length;
-  if (uppercaseRatio > 0.25) {
-    return { success: false, message: "Message contains excessive uppercase text.", field: "msg" };
-  }
-
-  return { success: true, data: { name, phoneNumber, code, msg } };
-}
-
-async function sendOtp(unsafePhoneNumber: string): Promise<ValidationResult> {
-  try {
-    const phoneNumberResult = makeSafeAndCheckPhoneNumber(unsafePhoneNumber);
-
-    if (!phoneNumberResult.success) {
-      return phoneNumberResult;
-    }
-
-    const { phoneNumber } = phoneNumberResult.data;
-
-    const otp = Otp.generateOtp(phoneNumber, OTP_SALT);
-    const stepSeconds = Otp.getOtpStep();
-    const stepMinutes = Math.floor(stepSeconds / 60);
-    const remainingSeconds = stepSeconds % 60;
-
-    const api = new SmsClient();
-    const message = `${otp} is your verification code. This code is valid for ${stepMinutes}m${remainingSeconds}s.`;
-    const result = await api.sendSMS(phoneNumber, message);
-
-    if (result.success) {
-      Otp.recordOtpRequest(phoneNumber);
-      return { success: true, data: undefined, message: "Verification code sent successfully." };
-    }
-
-    throw new Error("Verification code failed to send.");
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return { success: false, message: error.message, field: "form" };
-    }
-
-    return { success: false, message: "Verification code failed to send.", field: "form" };
-  }
-}
-
-async function sendMsg(unsafeName: string, unsafePhoneNumber: string, unsafeCode: string, unsafeMsg: string): Promise<ValidationResult> {
-  try {
-    const makeSafeResult = makeSafeAndCheck(unsafeName, unsafePhoneNumber, unsafeCode, unsafeMsg);
-
-    if (!makeSafeResult.success) {
-      return makeSafeResult;
-    }
-
-    const { name, phoneNumber, code, msg } = makeSafeResult.data;
-    const message = `Web message from ${name} ( ${phoneNumber} ):\n\n"${msg}"`;
-
-    const isVerified = verifyOtp(phoneNumber, OTP_SALT, code);
-    if (!isVerified) {
-      return { success: false, message: "Your verification code is invalid or has expired. Please try again.", field: "code" };
-    }
-
-    const smsClient = new SmsClient();
-    const result = await smsClient.sendSMS(ANDROID_SMS_GATEWAY_RECIPIENT_PHONE, message);
-
-    if (result.success) {
-      Otp.recordMsgSubmission(phoneNumber);
-      return { success: true, data: undefined, message: "Message sent successfully." };
-    }
-
-    throw new Error("Message failed to send.");
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return { success: false, message: error.message, field: "form" };
-    }
-
-    return { success: false, message: "Message failed to send.", field: "form" };
-  }
-}
-
-interface FormState {
-  errors: FormErrors;
-  success: boolean;
-}
-
-async function handleFormRequest(): Promise<FormState> {
-  const errors: FormErrors = { name: "", phone: "", msg: "", code: "", captcha: "", form: "" };
+async function handleFormRequest(): Promise<ContactFormState> {
+  const errors: ContactFormErrors = {
+    name: "",
+    phone: "",
+    msg: "",
+    code: "",
+    captcha: "",
+    form: "",
+  };
   let success = false;
-
-  if (Astro.request.method !== "POST") {
-    return { errors, success };
-  }
+  let action = "send_otp";
 
   try {
-    const data = await Astro.request.formData();
-    const rawCapToken = data.get("cap-token");
-    const rawAction = data.get("action");
-    const rawName = data.get("name");
-    const rawPhone = data.get("phone");
-    const rawMsg = data.get("msg");
-    const rawCode = data.get("code");
-
-    const submittedFields = [rawCapToken, rawAction, rawName, rawPhone, rawMsg, rawCode];
-    if (!submittedFields.every((field): field is string => typeof field === "string")) {
-      throw new Error("Invalid form submission.");
+    let response: ContactFormResult<{ nextAction: string }> =
+      await (await POST(Astro))?.json();
+    
+    if (!response) {
+      errors.form = "Invalid response.";
+      return { errors, success, action };
     }
+    
+    if (!response.success) {
+      errors.form = response.message || "An unexpected error occurred.";
+      return { errors, success, action };
+    } 
+    
+    action = response.data.nextAction;
 
-    const [capToken, action, name, phone, msg, code] = submittedFields;
-
-    const capValidation = await CapServer.validateToken(capToken);
-    if (!capValidation.success) {
-      errors.captcha = "Invalid captcha token.";
-      return { errors, success };
-    }
-
-    if (action !== "send_otp" && action !== "send_msg") {
-      errors.form = "Invalid action.";
-      return { errors, success };
-    }
-
-    const result = action === "send_otp"
-      ? await sendOtp(phone)
-      : await sendMsg(name, phone, code, msg);
-
-    if (!result.success) {
-      const target = result.field ?? "form";
-      errors[target] = result.message;
-      return { errors, success };
-    }
-
-    if (action === "send_otp") {
-      errors.form = result.message ?? "";
-      return { errors, success };
-    }
-
-    success = true;
-    return { errors, success };
+    return { errors, success, action };
   } catch (error) {
     if (error instanceof Error) {
-      errors.form = error.message;
+      errors.form = "An unexpected error occurred: " + error.message;
     } else {
       errors.form = "An unexpected error occurred.";
     }
 
-    return { errors, success };
+    return { errors, success, action };
   }
 }
 
-const { errors, success } = await handleFormRequest();
+Astro.session?.set('init', true); // Make sure session cookie is set early, else error (better fix: disable html streaming maybe?)
+
+const { errors, success, action } = (Astro.request.method === "POST")? await handleFormRequest() : { errors: {}, success: false, action: "send_otp" };
+
 ---
 <script>
   // @ts-nocheck
@@ -265,7 +88,7 @@ const { errors, success } = await handleFormRequest();
     --cap-spinner-background-color: var(--input-bg);
     --cap-spinner-thickness: 2px;
     --cap-credits-display: inline;
-    margin: 0 0 0 0;
+    margin: 0;
     display: block;
   }
   cap-widget::part(attribution) {
@@ -282,6 +105,9 @@ const { errors, success } = await handleFormRequest();
       "msg msg msg msg"
       "captcha captcha verify verify"
       "code code submit submit";
+  }
+  form fieldset {
+    display: contents;
   }
   #captcha-credits {
     font-size: x-small;
@@ -302,50 +128,54 @@ const { errors, success } = await handleFormRequest();
     grid-area: captcha;
     margin-bottom: 0;
   }
-  button[name="action"] {
+  button {
     height: 39px;
     margin: 29px 0 10px 0;
     padding: 8px 12px;
   }
-  button[name="action"]#send_otp {
+  button#send_otp {
     grid-area: verify;
   }
-  button[name="action"]#send_msg {
+  button#send_msg {
     grid-area: submit;
   }
 </style>
 
 <h2>Contact <iconify-icon icon="streamline-sharp-color:chat-bubble-typing-oval"></iconify-icon></h2>
-{!success && <form method="post" x-data="{}">
+{!success && action != "success" && <form method="post" x-data="{}">
   <div>
     <p>Use the below form to shoot me a quick text!</p>
     {errors.form && <p>{errors.form}</p>}
   </div>
-  <label for="name">
-    Name
-    <input type="text" id="name" name="name" value="Bad Blocks" />
-    {errors.name && <p>{errors.name}</p>}
-  </label>
-  <label for="phone">
-    Phone
-    <input type="text" id="phone" name="phone" value="555-555-5555" />
-    {errors.phone && <p>{errors.phone}</p>}
-  </label>
-  <label for="msg">
-    Msg
-    <textarea id="msg" name="msg">I think badblocks rocks! A quick brown fox jumped over the lazy dog!</textarea>
-    {errors.msg && <p>{errors.msg}</p>}
-  </label>
+  <fieldset id="send_otp" disabled={action !== "send_otp"}>
+    <label for="name">
+      Name
+      <input type="text" id="name" name="name" value="Bad Blocks" />
+      {errors.name && <p>{errors.name}</p>}
+    </label>
+    <label for="phone">
+      Phone
+      <input type="text" id="phone" name="phone" value="206-745-2154" />
+      {errors.phone && <p>{errors.phone}</p>}
+    </label>
+    <label for="msg">
+      Msg
+      <textarea id="msg" name="msg">I think badblocks rocks! A quick brown fox jumped over the lazy dog!</textarea>
+      {errors.msg && <p>{errors.msg}</p>}
+    </label>
+  </fieldset>
+  <button id="send_otp" name="action" value="send_otp" type="submit" disabled={action !== "send_otp"}>Verify Your Number!</button>
+  <fieldset id="send_msg" disabled={action !== "send_msg"}>
+    <label for="code">
+      Code
+      <input type="text" id="code" name="code" placeholder="123456" />
+      {errors.code && <p>{errors.code}</p>}
+    </label>
+  </fieldset>
+  <button id="send_msg" name="action" value="send_msg" type="submit" disabled={action !== "send_msg"}>Text Me!</button>
   <label for="captcha">
     Captcha <span id="captcha-credits"></span>
     <cap-widget id="captcha" data-cap-api-endpoint="/cap/"></cap-widget>
     {errors.captcha && <p>{errors.captcha}</p>}
   </label>
-  <label for="code">
-    Code
-    <input type="text" id="code" name="code" placeholder="123456" />
-    {errors.code && <p>{errors.code}</p>}
-  </label>
-  <button id="send_otp" name="action" value="send_otp" type="submit">Verify Your Number!</button>
-  <button id="send_msg" name="action" value="send_msg" type="submit">Send It!</button>
 </form> || <p>Your message has been sent successfully!</p>}

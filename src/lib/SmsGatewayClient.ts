@@ -31,7 +31,10 @@ class SmsClient {
         state: msg_state.state,
       };
     } catch (error) {
-      return { success: false, error: error };
+      if (error instanceof Error) {
+        return { success: false, message: error.message };
+      }
+      return { success: false, message: "Unknown sendSMS error." };
     }
   }
 
@@ -44,7 +47,7 @@ class SmsClient {
         state: msg_state.state,
       };
     } catch (error) {
-      return { success: false, id: id, error: error };
+      return { success: false, id: id, message: error };
     }
   }
 }
