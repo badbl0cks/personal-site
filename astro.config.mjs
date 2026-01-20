@@ -4,14 +4,20 @@ import { defineConfig, envField } from "astro/config";
 import alpinejs from "@astrojs/alpinejs";
 import sitemap from "@astrojs/sitemap";
 import bun from "@nurodev/astro-bun";
+import node from "@astrojs/node";
 import db from "@astrojs/db";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://badblocks.dev",
   trailingSlash: "never",
-  adapter: bun(),
-  output: "static",
+  // bun adapter is not official, so keep
+  // the node adapter available just in case
+  adapter: node({
+    mode: "standalone",
+  }),
+  // adapter: bun(),
+  // output: "static",
   devToolbar: { enabled: false },
   prefetch: {
     prefetchAll: true,

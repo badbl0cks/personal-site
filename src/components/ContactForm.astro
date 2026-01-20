@@ -1,51 +1,30 @@
 ---
-import { POST} from "@pages/endpoints/contact";
-import type { ContactFormErrors, ContactFormState, ContactFormResult } from "../types/ContactForm";
-type Props = Record<string, never>;
+import { POST, generateInitialState } from "@pages/endpoints/contact";
+import * as ContactFormTypes from "../types/ContactForm";
 
-async function handleFormRequest(): Promise<ContactFormState> {
-  const errors: ContactFormErrors = {
-    name: "",
-    phone: "",
-    msg: "",
-    code: "",
-    captcha: "",
-    form: "",
-  };
-  let success = false;
-  let action = "send_otp";
-
+async function handlePost(): Promise<ContactFormTypes.State> {
   try {
-    let response: ContactFormResult<{ nextAction: string }> =
+    let response =
       await (await POST(Astro))?.json();
     
     if (!response) {
-      errors.form = "Invalid response.";
-      return { errors, success, action };
-    }
-    
-    if (!response.success) {
-      errors.form = response.message || "An unexpected error occurred.";
-      return { errors, success, action };
-    } 
-    
-    action = response.data.nextAction;
+      return generateInitialState("Invalid response.");
+    }    
 
-    return { errors, success, action };
+    return response;
   } catch (error) {
+    let message = "An unexpected error occurred.";
     if (error instanceof Error) {
-      errors.form = "An unexpected error occurred: " + error.message;
-    } else {
-      errors.form = "An unexpected error occurred.";
+      message = "An unexpected error occurred: " + error.message;
     }
 
-    return { errors, success, action };
+    return generateInitialState(message);
   }
 }
 
-Astro.session?.set('init', true); // Make sure session cookie is set early, else error (better fix: disable html streaming maybe?)
+// CANNOT USE SESSION INSIDE AN ASTRO COMPONENT! MUST REVALIDATE FORM FIELDS OR CONVERT TO REGULAR PAGE (preferable as there will never be more than one contact form)
 
-const { errors, success, action } = (Astro.request.method === "POST")? await handleFormRequest() : { errors: {}, success: false, action: "send_otp" };
+const state = (Astro.request.method === "POST")? await handlePost() : generateInitialState();
 
 ---
 <script>
@@ -104,7 +83,7 @@ const { errors, success, action } = (Astro.request.method === "POST")? await han
       "name name phone phone"
       "msg msg msg msg"
       "captcha captcha verify verify"
-      "code code submit submit";
+      "otp otp submit submit";
   }
   form fieldset {
     display: contents;
@@ -142,40 +121,40 @@ const { errors, success, action } = (Astro.request.method === "POST")? await han
 </style>
 
 <h2>Contact <iconify-icon icon="streamline-sharp-color:chat-bubble-typing-oval"></iconify-icon></h2>
-{!success && action != "success" && <form method="post" x-data="{}">
+{state.state !== "complete"  && <form method="post" x-data="{}">
   <div>
     <p>Use the below form to shoot me a quick text!</p>
-    {errors.form && <p>{errors.form}</p>}
+    {state.error && <p>{state.error}</p>}
   </div>
-  <fieldset id="send_otp" disabled={action !== "send_otp"}>
+  <fieldset id="send_otp" disabled={state.state !== "initial"}>
     <label for="name">
       Name
       <input type="text" id="name" name="name" value="Bad Blocks" />
-      {errors.name && <p>{errors.name}</p>}
+      {"name" in state.fields && state.fields.name.hasError && <p>{state.fields.name.error}</p>}
     </label>
     <label for="phone">
       Phone
       <input type="text" id="phone" name="phone" value="206-745-2154" />
-      {errors.phone && <p>{errors.phone}</p>}
+      {"phone" in state.fields && state.fields.phone.hasError && <p>{state.fields.phone.error}</p>}
     </label>
     <label for="msg">
       Msg
       <textarea id="msg" name="msg">I think badblocks rocks! A quick brown fox jumped over the lazy dog!</textarea>
-      {errors.msg && <p>{errors.msg}</p>}
+      {"msg" in state.fields && state.fields.msg.hasError && <p>{state.fields.msg.error}</p>}
     </label>
   </fieldset>
-  <button id="send_otp" name="action" value="send_otp" type="submit" disabled={action !== "send_otp"}>Verify Your Number!</button>
-  <fieldset id="send_msg" disabled={action !== "send_msg"}>
-    <label for="code">
+  <button id="send_otp" name="action" value="send_otp" type="submit" disabled={state.state !== "initial"}>Verify Your Number!</button>
+  <fieldset id="send_msg" disabled={state.state !== "otp_sent"}>
+    <label for="otp">
       Code
-      <input type="text" id="code" name="code" placeholder="123456" />
-      {errors.code && <p>{errors.code}</p>}
+      <input type="text" id="otp" name="otp" placeholder="123456" />
+      {"otp" in state.fields && state.fields.otp.hasError && <p>{state.fields.otp.error}</p>}
     </label>
   </fieldset>
-  <button id="send_msg" name="action" value="send_msg" type="submit" disabled={action !== "send_msg"}>Text Me!</button>
+  <button id="send_msg" name="action" value="send_msg" type="submit" disabled={state.state !== "otp_sent"}>Text Me!</button>
   <label for="captcha">
     Captcha <span id="captcha-credits"></span>
     <cap-widget id="captcha" data-cap-api-endpoint="/cap/"></cap-widget>
-    {errors.captcha && <p>{errors.captcha}</p>}
+    {"captcha" in state.fields && state.fields.captcha.hasError && <p>{state.fields.captcha.error}</p>}
   </label>
 </form> || <p>Your message has been sent successfully!</p>}

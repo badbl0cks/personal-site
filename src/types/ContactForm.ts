@@ -1,4 +1,4 @@
-export type FieldKey = "name" | "phone" | "msg" | "code" | "captcha" | "form";
+export type FieldKey = "name" | "phone" | "msg" | "otp" | "captcha" | "form";
 export type FieldValue = {
   hasError: boolean;
   value?: string;
@@ -24,11 +24,11 @@ export type SendOtpState = {
 
 export type OtpSentState = {
   state: "otp_sent";
-} & BaseState<"name" | "phone" | "msg" | "captcha">;
+} & BaseState<never>;
 
 export type SendMsgState = {
   state: "send_msg";
-} & BaseState<"name" | "phone" | "msg" | "code" | "captcha">;
+} & BaseState<"name" | "phone" | "msg" | "otp" | "captcha">;
 
 export type CompleteState = {
   state: "complete";
@@ -40,3 +40,13 @@ export type State =
   | OtpSentState
   | SendMsgState
   | CompleteState;
+
+export type SMSResultSuccess = {
+  success: true;
+  expiresInSeconds?: number;
+};
+export type SMSResultFailure = {
+  success: false;
+  error: string;
+};
+export type SendSMSResult = SMSResultSuccess | SMSResultFailure;

@@ -16,6 +16,7 @@
     "@astrojs/alpinejs": "^0.4.9",
     "@astrojs/check": "^0.9.6",
     "@astrojs/db": "^0.18.3",
+    "@astrojs/node": "^9.5.2",
     "@astrojs/partytown": "^2.1.4",
     "@astrojs/sitemap": "^3.6.0",
     "@astrojs/ts-plugin": "^1.10.6",

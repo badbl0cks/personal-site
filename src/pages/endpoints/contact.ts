@@ -1,4 +1,4 @@
-import type { APIContext, APIRoute, AstroGlobal } from "astro";
+import type { APIContext, APIRoute, AstroSession } from "astro";
 import SmsClient from "@lib/SmsGatewayClient.ts";
 import Otp, { verifyOtp } from "@lib/Otp.ts";
 import CapServer from "@lib/CapAdapter";
@@ -7,7 +7,6 @@ import {
   OTP_SUPER_SECRET_SALT,
   ANDROID_SMS_GATEWAY_RECIPIENT_PHONE,
 } from "astro:env/server";
-import type { defaultSettings } from "astro/runtime/client/dev-toolbar/settings.js";
 export const prerender = false;
 
 const OTP_SALT = OTP_SUPER_SECRET_SALT;
@@ -15,9 +14,16 @@ if (!OTP_SALT) {
   throw new Error("OTP secret salt configuration is missing.");
 }
 
-async function sendOtp({
-  phone,
-}: ContactFormOtpPayload): Promise<SendSMSResult> {
+async function sendOtp(
+  phone: string | undefined,
+): Promise<ContactForm.SendSMSResult> {
+  if (!phone) {
+    return {
+      success: false,
+      error: "Phone number is required.",
+    };
+  }
+
   const otp = Otp.generateOtp(phone, OTP_SALT);
   const stepSeconds = Otp.getOtpStep();
   const stepMinutes = Math.floor(stepSeconds / 60);
@@ -37,24 +43,31 @@ async function sendOtp({
   } else {
     return {
       success: false,
-      errors: { form: "Verification code failed to send." },
+      error: "Verification code failed to send.",
     };
   }
 }
 
-async function sendMsg({
-  name,
-  phone,
-  code,
-  msg,
-}: ContactFormMsgPayload): Promise<SendSMSResult> {
+async function sendMsg(
+  name: string | undefined,
+  phone: string | undefined,
+  otp: string | undefined,
+  msg: string | undefined,
+): Promise<ContactForm.SendSMSResult> {
+  if (!name || !phone || !otp || !msg) {
+    return {
+      success: false,
+      error: "SendMsg: Missing required fields",
+    };
+  }
+
   const message = `Web message from ${name} ( ${phone} ):\n\n"${msg}"`;
 
-  const isVerified = verifyOtp(phone, OTP_SALT, code);
+  const isVerified = verifyOtp(phone, OTP_SALT, otp);
   if (!isVerified) {
     return {
       success: false,
-      errors: { code: "Invalid or expired verification code." },
+      error: "Invalid or expired verification code.",
     };
   }
 
@@ -73,7 +86,7 @@ async function sendMsg({
 
   return {
     success: false,
-    errors: { form: "Message failed to send." },
+    error: "Message failed to send.",
   };
 }
 
@@ -88,9 +101,9 @@ export const ALL: APIRoute = () => {
   );
 };
 
-function validateFields<K extends ContactForm.FieldKey>(
+async function validateFields<K extends ContactForm.FieldKey>(
   unsafe: ContactForm.Fields<K>,
-): ContactForm.Fields<K> {
+): Promise<ContactForm.Fields<K>> {
   const fields: Partial<ContactForm.Fields<K>> = {};
   const printableAsciiRegex = /^[\x20-\x7E\n\r]*$/;
   const sixDigitsOnlyRegex = /^[0-9]{6}$/;
@@ -166,9 +179,17 @@ function validateFields<K extends ContactForm.FieldKey>(
         }
         break;
       }
-      case "code": {
+      case "otp": {
         if (!sixDigitsOnlyRegex.test(value)) {
           error = "OTP code invalid.";
+          break;
+        }
+        break;
+      }
+      case "captcha": {
+        const capValidation = await CapServer.validateToken(value);
+        if (!capValidation.success) {
+          error = "Invalid captcha token.";
           break;
         }
         break;
@@ -181,31 +202,32 @@ function validateFields<K extends ContactForm.FieldKey>(
       fields[field] = { hasError: false, value };
     }
   }
-
   return fields as ContactForm.Fields<K>;
 }
 
-const isValidState = (value: unknown): value is ContactForm.State => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as Partial<ContactForm.State>;
+export function generateInitialState(error?: string): ContactForm.State {
   return (
-    typeof candidate.state === "string" &&
-    (typeof candidate.fields === "object" ||
-      typeof candidate.fields === "undefined") &&
-    (typeof candidate.error === "string" ||
-      typeof candidate.error === "undefined") &&
-    typeof candidate.hasError === "boolean"
-  );
-};
+    !error
+      ? {
+          state: "initial",
+          fields: {},
+          hasError: false,
+        }
+      : {
+          state: "initial",
+          fields: {},
+          error,
+          hasError: true,
+        }
+  ) as ContactForm.State;
+}
 
-export const POST: APIRoute = async (Astro) => {
-  const respondWithState = (state: ContactForm.State) =>
-    new Response(JSON.stringify(state), {
-      status: state.hasError ? 400 : 200,
-    });
+const respondWithState = (state: ContactForm.State) =>
+  new Response(JSON.stringify(state), {
+    status: state.hasError ? 400 : 200,
+  });
+
+export const POST: APIRoute = async (Astro: APIContext) => {
   try {
     const initialState = await processRequestIntoState(Astro);
     if (initialState.hasError) {
@@ -217,24 +239,15 @@ export const POST: APIRoute = async (Astro) => {
       return respondWithState(validatedState);
     }
 
-    const finalState = await runStateAction(validatedState);
+    const finalState = await runStateAction(validatedState, Astro);
     return respondWithState(finalState);
-  } catch (caught) {
-    if (isValidState(caught)) {
-      return respondWithState(caught);
-    }
-
+  } catch (error) {
     const message =
-      caught instanceof Error
-        ? caught.message
-        : String(caught ?? "Unexpected error");
+      error instanceof Error
+        ? "Unexpected POST error: " + error.message
+        : "Unexpected POST error.";
 
-    return respondWithState({
-      state: "initial",
-      fields: {},
-      hasError: true,
-      error: message,
-    });
+    return respondWithState(generateInitialState(message));
   }
 };
 
@@ -266,38 +279,43 @@ export async function processRequestIntoState(
       throw "Data is undefined.";
     }
 
-    const action = await data.get("action")?.toString();
+    const action = await data.get("action");
 
     if (!action) {
       throw "Invalid action";
     }
 
-    fields.name = {
-      hasError: false,
-      value:
-        action === "send_msg"
-          ? session.get("name")?.toString()
-          : await data.get("name")?.toString(),
-    };
-    fields.phone = {
-      hasError: false,
-      value:
-        action === "send_msg"
-          ? session.get("phone")?.toString()
-          : await data.get("phone")?.toString(),
-    };
-    fields.msg = {
-      hasError: false,
-      value:
-        action === "send_msg"
-          ? session.get("msg")?.toString()
-          : await data.get("msg")?.toString(),
-    };
-    fields.captcha = {
-      hasError: false,
-      value: data.get("cap-token")?.toString(),
-    };
-    fields.code = { hasError: false, value: data.get("code")?.toString() };
+    //TODO: session.get returns undefined always
+    if (action == "send_otp" || action == "send_msg") {
+      fields.name = {
+        hasError: false,
+        value: await (action === "send_msg"
+          ? session.get("name")
+          : data.get("name")),
+      };
+      fields.phone = {
+        hasError: false,
+        value: await (action === "send_msg"
+          ? session.get("phone")
+          : data.get("phone")),
+      };
+      fields.msg = {
+        hasError: false,
+        value: await (action === "send_msg"
+          ? session.get("msg")
+          : data.get("msg")),
+      };
+      fields.captcha = {
+        hasError: false,
+        value: await data.get("cap-token"),
+      };
+      if (action === "send_msg") {
+        fields.otp = {
+          hasError: false,
+          value: await data.get("otp"),
+        };
+      }
+    }
 
     return {
       state: action,
@@ -307,24 +325,127 @@ export async function processRequestIntoState(
   } catch (error) {
     return {
       state: "initial",
-      fields,
+      fields: {},
       hasError: true,
-      error: error instanceof Error ? error.message : "Unknown error.",
+      error:
+        error instanceof Error
+          ? "Unexpected processRequest error: " + error.message
+          : "Unexpected processRequest error.",
     };
   }
+}
+
+function nextState(state: ContactForm.State): ContactForm.State {
+  if (state.hasError) {
+    return state;
+  }
+
+  let next = {
+    state: "initial",
+    fields: {},
+    hasError: false,
+  };
+  switch (state.state) {
+    case "send_otp":
+      next.state = "otp_sent";
+      break;
+    case "send_msg":
+      next.state = "complete";
+      break;
+  }
+  return next as ContactForm.State;
+}
+
+function prevState(state: ContactForm.State): ContactForm.State {
+  let next = {
+    state: "initial",
+    fields: {},
+    hasError: state.hasError,
+  };
+  switch (state.state) {
+    case "send_otp":
+      next.state = "initial";
+      break;
+    case "send_msg":
+      next.state = "otp_sent";
+      break;
+  }
+  return next as ContactForm.State;
 }
 
 export async function validateState(
   state: ContactForm.State,
 ): Promise<ContactForm.State> {
-  state.fields = validateFields(state.fields);
-  // if state.fields has any errors, set hasError on state too and set a message
-  return state;
+  try {
+    state.fields = await validateFields(state.fields);
+    // if state.fields has any errors, set hasError on state too and set a message
+    return state;
+  } catch (error) {
+    return {
+      state: "initial",
+      fields: {},
+      hasError: true,
+      error:
+        error instanceof Error
+          ? "Unexpected validateState error: " + error.message
+          : "Unexpected validateState error.",
+    };
+  }
 }
 
 export async function runStateAction(
   state: ContactForm.State,
+  Astro: APIContext,
 ): Promise<ContactForm.State> {
-  //Todo
-  return state;
+  const { session } = Astro;
+
+  try {
+    if (state.state === "send_otp" || state.state === "send_msg") {
+      const name = state.fields.name.value;
+      const phone = state.fields.phone.value;
+      const msg = state.fields.msg.value;
+      const otp =
+        state.state === "send_msg" ? state.fields.otp.value : undefined;
+
+      let result;
+      switch (state.state) {
+        case "send_otp":
+          result = await sendOtp(phone);
+          if (result.success) {
+            session?.set("name", name);
+            session?.set("phone", phone);
+            session?.set("msg", msg);
+          }
+          break;
+        case "send_msg":
+          result = await sendMsg(name, phone, msg, otp);
+          if (result.success) {
+            session?.delete("name");
+            session?.delete("phone");
+            session?.delete("msg");
+          }
+          break;
+      }
+      if (!result.success) {
+        state.hasError = true;
+        state.error = result.error;
+        state = prevState(state);
+      } else {
+        state = nextState(state);
+      }
+    } else {
+      return generateInitialState("Invalid action.");
+    }
+    return state;
+  } catch (error) {
+    return {
+      state: "initial",
+      fields: {},
+      hasError: true,
+      error:
+        error instanceof Error
+          ? "Unexpected runAction error: " + error.message
+          : "Unexpected runAction error.",
+    };
+  }
 }
