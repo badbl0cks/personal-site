@@ -7,8 +7,8 @@ const ONE_WEEK_IN_MS: number = 7 * 24 * 60 * 60 * 1000;
 const ONE_HOUR_IN_MS: number = 60 * 60 * 1000;
 const MAX_OTP_REQUESTS_PER_HOUR: number = 3;
 const MAX_MESSAGES_PER_WEEK: number = 3;
-const OTP_STEP_IN_SEC: number = 60;
-const VALID_PAST_OTP_STEPS: number = 5;
+const OTP_STEP_IN_SEC: number = 300;
+const VALID_PAST_OTP_STEPS: number = 1;
 const VALID_FUTURE_OTP_STEPS: number = 1;
 const OTP_NUM_DIGITS: number = 6;
 

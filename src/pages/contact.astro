@@ -1,55 +1,48 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
-import { POST, generateInitialState } from "@pages/endpoints/contact";
-import * as ContactFormTypes from "../types/ContactForm";
+import { actions, isInputError } from "astro:actions";
 export const prerender = false;
 
-async function handlePost(): Promise<ContactFormTypes.State> {
-  try {
-    let response =
-      await (await POST(Astro))?.json();
-    
-    if (!response) {
-      return generateInitialState("Invalid response.");
-    }    
-
-    return response;
-  } catch (error) {
-    let message = "An unexpected error occurred.";
-    if (error instanceof Error) {
-      message = "An unexpected error occurred: " + error.message;
-    }
-
-    return generateInitialState(message);
-  }
-}
-
-const state = (Astro.request.method === "POST")? await handlePost() : generateInitialState();
+const result = Astro.getActionResult(actions.contact.submitForm);
+const nextAction = result?.data?.nextAction || "send_otp";
+const error = isInputError(result?.error) ? result.error.fields : {};
 ---
+
 <script>
-  // @ts-nocheck
   import CapWidget from "@cap.js/widget";
   import "iconify-icon";
-</script>
-<script>
-  const widget = document.querySelector('cap-widget');
-  const shadowRoot = widget?.shadowRoot;
-  const credits = shadowRoot?.querySelector('[part="attribution"]');
-  
-  if (credits) {
-    const clone = credits.cloneNode(true);
-    const poweredByTextBefore = document.createTextNode("(by ");
-    const poweredByTextAfter = document.createTextNode(")");
-    document.querySelector('#captcha-credits')?.appendChild(poweredByTextBefore);
-    document.querySelector('#captcha-credits')?.appendChild(clone);
-    document.querySelector('#captcha-credits')?.appendChild(poweredByTextAfter);
-    widget?.style.setProperty('--cap-credits-display', 'none');
+
+  const widget = document.querySelector("cap-widget");
+  if (widget) {
+    const credits = widget?.shadowRoot?.querySelector('[part="attribution"]');
+
+    if (credits) {
+      const clone = credits.cloneNode(true);
+      const poweredByTextBefore = document.createTextNode("(by ");
+      const poweredByTextAfter = document.createTextNode(")");
+      document
+        .querySelector("#captcha-credits")
+        ?.appendChild(poweredByTextBefore);
+      document.querySelector("#captcha-credits")?.appendChild(clone);
+      document
+        .querySelector("#captcha-credits")
+        ?.appendChild(poweredByTextAfter);
+      widget?.style.setProperty("--cap-credits-display", "none");
+    }
+
+    widget.addEventListener("solve", function (e) {
+      const token = e.detail.token;
+      const hiddenInput = document.querySelector("input[id='captcha']");
+      if (hiddenInput && "value" in hiddenInput) {
+        hiddenInput.value = token;
+      }
+    });
   }
 </script>
 <style>
   cap-widget {
     --cap-background: var(--bg-color);
-    --cap-border-color: rgba(255,255,255,0);
+    --cap-border-color: rgba(255, 255, 255, 0);
     --cap-border-radius: 0;
     --cap-widget-height: initial;
     --cap-widget-width: 100%;
@@ -121,43 +114,100 @@ const state = (Astro.request.method === "POST")? await handlePost() : generateIn
 <Layout>
   <title slot="head">Home</title>
   <Fragment slot="content">
-    <h2>Contact <iconify-icon icon="streamline-sharp-color:chat-bubble-typing-oval"></iconify-icon></h2>
-    {state.state !== "complete"  && <form method="post" x-data="{}">
-      <div>
-        <p>Use the below form to shoot me a quick text!</p>
-        {state.error && <p>{state.error}</p>}
-      </div>
-      <fieldset id="send_otp" disabled={state.state !== "initial"}>
-        <label for="name">
-          Name
-          <input type="text" id="name" name="name" value="Bad Blocks" />
-          {"name" in state.fields && state.fields.name.hasError && <p>{state.fields.name.error}</p>}
-        </label>
-        <label for="phone">
-          Phone
-          <input type="text" id="phone" name="phone" value="206-745-2154" />
-          {"phone" in state.fields && state.fields.phone.hasError && <p>{state.fields.phone.error}</p>}
-        </label>
-        <label for="msg">
-          Msg
-          <textarea id="msg" name="msg">I think badblocks rocks! A quick brown fox jumped over the lazy dog!</textarea>
-          {"msg" in state.fields && state.fields.msg.hasError && <p>{state.fields.msg.error}</p>}
-        </label>
-      </fieldset>
-      <button id="send_otp" name="action" value="send_otp" type="submit" disabled={state.state !== "initial"}>Verify Your Number!</button>
-      <fieldset id="send_msg" disabled={state.state !== "otp_sent"}>
-        <label for="otp">
-          Code
-          <input type="text" id="otp" name="otp" placeholder="123456" />
-          {"otp" in state.fields && state.fields.otp.hasError && <p>{state.fields.otp.error}</p>}
-        </label>
-      </fieldset>
-      <button id="send_msg" name="action" value="send_msg" type="submit" disabled={state.state !== "otp_sent"}>Text Me!</button>
-      <label for="captcha">
-        Captcha <span id="captcha-credits"></span>
-        <cap-widget id="captcha" data-cap-api-endpoint="/cap/"></cap-widget>
-        {"captcha" in state.fields && state.fields.captcha.hasError && <p>{state.fields.captcha.error}</p>}
-      </label>
-    </form> || <p>Your message has been sent successfully!</p>}
+    <h2>
+      Contact <iconify-icon
+        icon="streamline-sharp-color:chat-bubble-typing-oval"></iconify-icon>
+    </h2>
+    {
+      (nextAction != "complete" && (
+        <form method="post" x-data="{}" action={actions.contact.submitForm}>
+          <div>
+            {(result?.error && (
+              <p class="error">
+                Unable to send {nextAction == "send_otp" ? "OTP" : "message"}.
+                Please correct any errors and try again.
+              </p>
+            )) || <p>Use the below form to shoot me a quick text!</p>}
+          </div>
+          <fieldset id="send_otp" disabled={nextAction != "send_otp"}>
+            <label for="name">
+              Name
+              <input
+                type="text"
+                id="name"
+                name="name"
+                aria-describedby="name"
+                placeholder="Bad Blocks"
+              />
+              {error.name && <p id="error_name">{error.name.join(",")}</p>}
+            </label>
+            <label for="phone">
+              Phone
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                aria-describedby="error_phone"
+                placeholder="555-555-5555"
+              />
+              {error.phone && <p id="error_phone">{error.phone.join(",")}</p>}
+            </label>
+            <label for="msg">
+              Msg
+              <textarea
+                id="msg"
+                name="msg"
+                aria-describedby="error_msg"
+                placeholder="I think badblocks rocks!"
+              />
+              {error.msg && <p id="error_msg">{error.msg.join(",")}</p>}
+            </label>
+          </fieldset>
+          <button
+            id="send_otp"
+            name="action"
+            value="send_otp"
+            type="submit"
+            disabled={nextAction != "send_otp"}
+          >
+            Verify Your Number!
+          </button>
+          <fieldset id="send_msg" disabled={nextAction != "send_msg"}>
+            <label for="otp">
+              Code
+              <input
+                type="text"
+                id="otp"
+                name="otp"
+                aria-describedby="error_otp"
+                placeholder="123456"
+              />
+              {error.otp && <p id="error_otp">{error.otp.join(",")}</p>}
+            </label>
+          </fieldset>
+          <button
+            id="send_msg"
+            name="action"
+            value="send_msg"
+            type="submit"
+            disabled={nextAction != "send_msg"}
+          >
+            Text Me!
+          </button>
+          <label for="captcha">
+            Captcha <span id="captcha-credits" />
+            <cap-widget
+              id="captcha"
+              data-cap-api-endpoint="/cap/"
+              aria-describedby="error_captcha"
+            />
+            {error.captcha && (
+              <p id="error_captcha">{error.captcha.join(",")}</p>
+            )}
+            <input type="hidden" id="captcha" name="captcha" />
+          </label>
+        </form>
+      )) || <p>Your message has been sent successfully!</p>
+    }
   </Fragment>
 </Layout>
