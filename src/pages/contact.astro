@@ -115,10 +115,12 @@ const msgValue = pickValue("msg");
   }
   label[for="captcha"] {
     grid-area: captcha;
+    a {
+      color: #000;
+    }
   }
   #captchaStatus {
     padding: 0.8rem 0;
-    font-size: small;
   }
   button {
     height: 39px;
@@ -150,9 +152,12 @@ const msgValue = pickValue("msg");
   }
 </style>
 <Layout>
-  <title slot="head">Home</title>
+  <title slot="head">Contact</title>
   <Fragment slot="content">
     <h2>Contact</h2>
+    <p><a href="https://kagi.com">Link Style 1</a></p><a href="https://kagi.com"
+      >Link Style 2</a
+    >
     {
       (nextAction != "complete" && (
         <form method="post" x-data="{}" action={actions.contact.submitForm}>
@@ -231,7 +236,7 @@ const msgValue = pickValue("msg");
           </fieldset>
           <label for="captcha">
             {/* prettier-ignore */}
-            <a href="https://capjs.js.org/" tabindex="-1">Cap</a>tcha
+            <a href="https://capjs.js.org/" tabindex="-1">Captcha</a>
             <input type="hidden" id="captcha" name="captcha" />
             <div id="captchaStatus">
               <iconify-icon id="initIcon" icon="line-md:loading-loop" />

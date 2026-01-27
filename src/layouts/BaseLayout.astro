@@ -5,26 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <!--<link rel="stylesheet" type="text/css" href="/style.css" />-->
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
-      rel="stylesheet"
-    />
     <script>
       const yearSpan = document.querySelector("#copyright-year");
       if (yearSpan) {
         yearSpan.innerHTML = new Date().getFullYear().toString();
       }
     </script>
+    <style is:inline>
+      @font-face {
+        font-family: "unscii16";
+        src:
+          url("unscii-16.woff") format("woff"),
+          url("unscii-16.ttf") format("ttf");
+      }
+      @font-face {
+        font-family: "unscii8";
+        src:
+          url("unscii-8.woff") format("woff"),
+          url("unscii-8.ttf") format("ttf");
+      }
+      a {
+        color: #333;
+        text-decoration: none;
+
+        &:visited {
+          color: #555;
+        }
+        &:hover {
+          color: #555;
+          text-decoration: underline;
+          text-decoration-style: dashed;
+        }
+      }
+      p a {
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+
+        &:hover::before {
+          content: "[";
+        }
+        &:hover::after {
+          content: "]";
+        }
+        &:hover {
+          text-decoration: none;
+          padding: 0;
+        }
+      }
+
+      ul {
+        list-style-type: square;
+      }
+    </style>
     <style>
+      h1 {
+        font-family: "unscii16", monospace;
+        font-size: 32px;
+        text-align: center;
+      }
       :root {
         --min-body-width: 30ch;
         --max-body-width: 120ch;
         font-size: 16px;
-        font-family: "VT323", monospace;
+        font-family: "unscii16", monospace;
         font-weight: 400;
         font-style: normal;
       }
@@ -46,6 +91,8 @@
         position: absolute;
         top: 0;
         left: 0;
+        background-color: #ccc;
+        color: #000;
       }
 
       header {
@@ -91,7 +138,6 @@
               <option value="city-destroyed">Apocalypse</option>
             </select>
           </li>
-          <li><a href="/tools">Tools</a></li>
           <li><a href="/contact">Contact</a></li>
           <li><a href="https://git.badblocks.dev" target="_blank">Git</a></li>
         </ul>
