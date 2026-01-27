@@ -1,6 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
 import { getActionContext } from "astro:actions";
-import { randomUUID } from "node:crypto";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered) return next();
@@ -19,6 +18,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (action?.calledFrom === "form") {
+    const formData = await context.request.clone().formData();
     const actionResult = await action.handler();
 
     context.session?.set(
@@ -30,6 +30,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     );
 
     if (actionResult.error) {
+      const draft = {
+        action: formData.get("action")?.toString() ?? "",
+        name: formData.get("name")?.toString() ?? "",
+        phone: formData.get("phone")?.toString() ?? "",
+        msg: formData.get("msg")?.toString() ?? "",
+      };
+
+      context.session?.set("contactFormDraft", draft);
+
       const referer = context.request.headers.get("Referer");
       if (!referer) {
         throw new Error(
@@ -39,6 +48,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return context.redirect(referer);
     }
 
+    context.session?.delete("contactFormDraft");
     return context.redirect(context.originPathname);
   }
 

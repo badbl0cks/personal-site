@@ -10,20 +10,10 @@ import {
   ANDROID_SMS_GATEWAY_RECIPIENT_PHONE,
 } from "astro:env/server";
 
-const isValidCaptcha: [(data: string) => any, { message: string }] = [
-  async (value: string) =>
-    typeof console.log(value) &&
-    /^[a-fA-F0-9]{16}:[a-fA-F0-9]{30}$/.test(value) &&
-    (await CapServer.validateToken(value)),
-  {
-    message: "Invalid captcha token.",
-  },
-];
-
-const stripLow = (value: string) => validator.stripLow(value);
-
-const isMobilePhone: [(data: string) => any, { message: string }] = [
-  (value: string) => validator.isMobilePhone(value, ["en-US", "en-CA"]),
+const isValidMobilePhone: [(data: string) => any, { message: string }] = [
+  (value: string) =>
+    validator.isMobilePhone(value, ["en-US", "en-CA"]) &&
+    Otp.isValidPhone(value),
   { message: "Invalid phone number" },
 ];
 
@@ -38,45 +28,30 @@ const noExcessiveRepetitions: [(data: string) => any, { message: string }] = [
   { message: "No excessive repetitions!" },
 ];
 
-const acceptableText: [(data: string) => any, { message: string }] = [
-  (value: string) =>
-    /^[\p{Letter}\p{Mark}\p{General_Category=Decimal_Number}\p{General_Category=Punctuation}\p{General_Category=Space_Separator}\p{General_Category=Symbol}\p{RGI_Emoji}]*$/v.test(
-      value,
-    ),
-  {
-    message:
-      "Only letters, numbers, punctuation, spaces, symbols, and emojis are allowed.",
-  },
-];
+const stripDisallowedCharacters = (value: string) =>
+  value
+    .match(
+      /(?:[\p{Letter}\p{Mark}\p{General_Category=Decimal_Number}\p{General_Category=Punctuation}\p{General_Category=Space_Separator}\p{General_Category=Symbol}]|\p{RGI_Emoji})/gv,
+    )
+    ?.join("") ?? "";
 
-const captcha_input = z
-  .string()
-  .trim()
-  .nonempty()
-  .refine(...isValidCaptcha);
+const captcha_input = z.string().trim().nonempty();
 
 const sendOtpAction = z.object({
   action: z.literal("send_otp"),
-  name: z
-    .string()
-    .trim()
-    .min(5)
-    .max(32)
-    .transform(stripLow)
-    .refine(...acceptableText),
+  name: z.string().trim().min(5).max(32).transform(stripDisallowedCharacters),
   phone: z
     .string()
     .trim()
-    .refine(...isMobilePhone),
+    .refine(...isValidMobilePhone),
   msg: z
     .string()
     .trim()
     .min(25)
     .max(512)
-    .transform(stripLow)
+    .transform(stripDisallowedCharacters)
     .refine(...noYelling)
-    .refine(...noExcessiveRepetitions)
-    .refine(...acceptableText),
+    .refine(...noExcessiveRepetitions),
   captcha: captcha_input,
 });
 
@@ -95,49 +70,41 @@ const submitActionDefinition = {
   input: formAction,
   handler: async (input: any, context: ActionAPIContext) => {
     if (!OTP_SUPER_SECRET_SALT || !ANDROID_SMS_GATEWAY_RECIPIENT_PHONE) {
+      console.log("Server variables are missing.");
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Server variables are missing.",
       });
     }
 
+    if (
+      !(
+        /^[a-fA-F0-9]{16}:[a-fA-F0-9]{30}$/.test(input.captcha) &&
+        (await CapServer.validateToken(input.captcha))
+      )
+    ) {
+      console.log("Invalid Captcha Token");
+      throw new ActionError({
+        code: "BAD_REQUEST",
+        message: "Invalid Captcha Token",
+      });
+    }
+
     if (input.action === "send_otp") {
       const { name, phone, msg } = input;
-      if (!phone || !Otp.validatePhoneNumber(phone)) {
-        throw new ActionError({
-          code: "BAD_REQUEST",
-          message: "Invalid phone number.",
-        });
-      }
-
-      if (Otp.isRateLimitedForOtp(phone)) {
-        throw new ActionError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many OTP requests. Please try again later.",
-        });
-      }
-
-      if (Otp.isRateLimitedForMsgs(phone)) {
-        throw new ActionError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many message requests. Please try again later.",
-        });
-      }
 
       const otp = Otp.generateOtp(phone, OTP_SUPER_SECRET_SALT);
       const stepSeconds = Otp.getOtpStep();
       const stepMinutes = Math.floor(stepSeconds / 60);
       const remainingSeconds = stepSeconds % 60;
 
-      const api = new SmsClient();
       const message = `${otp} is your verification code. This code is valid for ${stepMinutes} minutes${
         remainingSeconds != 0 ? " " + remainingSeconds + " seconds." : "."
       }`;
-      const result = await api.sendSMS(phone, message);
 
+      const result = await new SmsClient().sendSMS(phone, message);
+      console.log(JSON.stringify(result));
       if (result.success) {
-        Otp.recordOtpRequest(phone);
-
         context.session?.set("phone", phone);
         context.session?.set("name", name);
         context.session?.set("msg", msg);
@@ -146,6 +113,9 @@ const submitActionDefinition = {
           nextAction: "send_msg",
         };
       } else {
+        console.log(
+          "Verification code failed to send. Please try again later.",
+        );
         throw new ActionError({
           code: "SERVICE_UNAVAILABLE",
           message: "Verification code failed to send. Please try again later.",
@@ -158,6 +128,7 @@ const submitActionDefinition = {
       const msg = await context.session?.get("msg");
 
       if (!name || !otp || !msg || !phone) {
+        console.log("Missing required fields.");
         throw new ActionError({
           code: "BAD_REQUEST",
           message: "Missing required fields.",
@@ -166,6 +137,7 @@ const submitActionDefinition = {
 
       const isVerified = verifyOtp(phone, OTP_SUPER_SECRET_SALT, otp);
       if (!isVerified) {
+        console.log("Invalid or expired verification code.");
         throw new ActionError({
           code: "BAD_REQUEST",
           message: "Invalid or expired verification code.",
@@ -192,6 +164,7 @@ const submitActionDefinition = {
         };
       }
 
+      console.log("Message failed to send.");
       throw new ActionError({
         code: "SERVICE_UNAVAILABLE",
         message: "Message failed to send.",

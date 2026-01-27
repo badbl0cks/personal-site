@@ -29,33 +29,36 @@ function getUserSecret(phoneNumber: string, salt: string): string {
     .digest("hex");
 }
 
-export function validatePhoneNumber(unsafePhoneNum: string) {
-  if (typeof unsafePhoneNum !== "string") {
-    return { success: false, message: "Invalid phone number." };
+export function normalizePhone(phone: string) {
+  const result = phone.replace(/[^\d]/g, "").trim().startsWith("1")
+    ? phone.substring(1)
+    : phone;
+
+  if (result.length !== 10) {
+    throw new Error("Invalid phone number.");
   }
 
-  unsafePhoneNum = unsafePhoneNum.replace(/[^0-9]/g, "").trim();
-  const cleanedNumber = unsafePhoneNum.startsWith("1")
-    ? unsafePhoneNum.substring(1)
-    : unsafePhoneNum;
+  return result;
+}
 
-  const isValidFormat = /^[2-7][0-8][0-9][2-9][0-9]{6}$/.test(cleanedNumber);
-  const isNotAllSameDigit = !/^(.)\1{9}$/.test(cleanedNumber);
-  const isNot911Number = !/^[0-9]{3}911[0-9]{4}$/.test(cleanedNumber);
-  const isNot555Number = !/^[0-9]{3}555[0-9]{4}$/.test(cleanedNumber);
-  const isNotPopSongNumber = !/^[0-9]{3}8675309$/.test(cleanedNumber);
+export function isValidPhone(phone: string): boolean {
+  phone = normalizePhone(phone);
+  const match = phone.match(/(\d{3})(\d{3})(\d{4})/);
+  const [, prefix, exchange, station] = match ?? [];
+  const isValidNANPFormat =
+    /^[2-7][0-8][0-9]$/.test(prefix) && /^[2-9][0-9]{2}$/.test(exchange);
+  const isNotAllSameDigit = !/^(.)\1{6}$/.test(exchange + station);
+  const isNot911Number = prefix !== "911" && exchange !== "911";
+  const isNot555Number = prefix !== "555" && exchange !== "555";
+  const isNotPopSongNumber = exchange !== "867" && station !== "5309";
 
-  if (
-    isValidFormat &&
+  return (
+    isValidNANPFormat &&
     isNotAllSameDigit &&
     isNot911Number &&
     isNot555Number &&
     isNotPopSongNumber
-  ) {
-    return { success: true, validatedPhoneNumber: cleanedNumber };
-  }
-
-  return { success: false, validatedPhoneNumber: undefined };
+  );
 }
 
 export function generateOtp(phoneNumber: string, salt: string): string {
@@ -141,7 +144,8 @@ export function recordOtpRequest(phoneNumber: string) {
 }
 
 export default {
-  validatePhoneNumber,
+  normalizePhone,
+  isValidPhone,
   generateOtp,
   verifyOtp,
   getOtpStep,
