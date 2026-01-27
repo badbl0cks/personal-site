@@ -4,17 +4,16 @@ import { actions, isInputError } from "astro:actions";
 export const prerender = false;
 
 const result = Astro.getActionResult(actions.contact.submitForm);
-// FIX (might be fixed with below change): if user types in invalid otp code, it returns an error
-// and then nextAction is set to "send_otp". It needs to be set
-// to "send_msg" if the error is caused by invalid otp code
-//
-// ALSO: change it maybe so user can always fill out all fields
-// in one go, including otp code (have verify number swap with code field when sent)
-// text me button should be disabled if otp code is invalid or missing
-const nextAction = result?.data?.nextAction || "send_otp";
-const error = isInputError(result?.error) ? result.error.fields : {};
 
-const formDraft = (await Astro.session?.get("contactFormDraft")) ?? undefined;
+const error = isInputError(result?.error)
+  ? result.error.fields
+  : result?.data?.error
+    ? { [result?.data?.field]: [result?.data?.error] }
+    : {};
+
+const nextAction = result?.data?.nextAction ?? "send_otp";
+
+const formDraft = await Astro.session?.get("contactFormDraft");
 if (formDraft && Object.keys(formDraft).length) {
   Astro.session?.delete("contactFormDraft");
 }
@@ -51,7 +50,8 @@ const msgValue = pickValue("msg");
     progressIcon
   ) {
     cap.addEventListener("solve", function (e) {
-      statusText.textContent = "You seem human enough!";
+      const humanness = Math.round((85 + Math.random() * 14.9) * 10) / 10;
+      statusText.textContent = `${humanness}% human. Good enough!`;
       progressIcon.classList.add("hidden");
       errorIcon.classList.add("hidden");
       initIcon.classList.add("hidden");
@@ -73,7 +73,7 @@ const msgValue = pickValue("msg");
     });
   }
   if (captchaInput && "value" in captchaInput) {
-    const {token} = await cap.solve();
+    const { token } = await cap.solve();
     captchaInput.value = token;
   }
 </script>
@@ -88,8 +88,8 @@ const msgValue = pickValue("msg");
       "header header"
       "name phone"
       "msg msg"
-      "otp captcha"
-      "send_otp send_msg";
+      "captcha otp"
+      "lbtn rbtn";
   }
   .hidden {
     display: none;
@@ -124,11 +124,17 @@ const msgValue = pickValue("msg");
     height: 39px;
     padding: 8px 12px;
   }
+  button#reset {
+    grid-area: lbtn;
+  }
   button#send_otp {
-    grid-area: send_otp;
+    grid-area: lbtn;
   }
   button#send_msg {
-    grid-area: send_msg;
+    grid-area: rbtn;
+  }
+  fieldset {
+    display: contents;
   }
   .spin {
     animation: spin 4s linear infinite;
@@ -154,24 +160,78 @@ const msgValue = pickValue("msg");
             {(result?.error && (
               <p class="error">
                 {result?.error.message}
-                Please correct any errors and try again. 
+                Please correct any errors and try again.
               </p>
             )) || <p>Use the below form to shoot me a quick text!</p>}
           </div>
-          <label for="name">
-            Name
-            <input
-              type="text"
-              id="name"
-              name="name"
-              aria-describedby="name"
-              value="Bad Blocks"
-              
-            /><!-- value={nameValue} -->
-            {error.name && <p id="error_name">{error.name.join(",")}</p>}
-          </label>
+          <fieldset id="send_otp_fields" disabled={nextAction != "send_otp"}>
+            <label for="name">
+              Name
+              <input
+                type="text"
+                id="name"
+                name="name"
+                aria-describedby="name"
+                value="Bad Blocks"
+              />
+              {error.name && <p id="error_name">{error.name.join(",")}</p>}
+            </label>
+            <label for="phone">
+              Phone
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                aria-describedby="error_phone"
+                value="2067452154"
+              />
+              {error.phone && <p id="error_phone">{error.phone.join(",")}</p>}
+            </label>
+            <label for="msg">
+              Msg
+              {/* prettier-ignore */}
+              <textarea id="msg" name="msg" aria-describedby="error_msg">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tortor neque, ullamcorper molestie fermentum quis, vulputate et lacus.</textarea>
+              {error.msg && <p id="error_msg">{error.msg.join(",")}</p>}
+            </label>
+            <button
+              id="send_otp"
+              name="action"
+              value="send_otp"
+              type="submit"
+              disabled={nextAction != "send_otp"}
+              class={nextAction != "send_otp" ? "hidden" : ""}
+            >
+              Send Verification Code!
+            </button>
+          </fieldset>
+          <fieldset id="send_msg_fields" disabled={nextAction != "send_msg"}>
+            <label for="otp" class={nextAction != "send_msg" ? "hidden" : ""}>
+              Verification Code
+              <input
+                type="text"
+                id="otp"
+                name="otp"
+                aria-describedby="error_otp"
+                placeholder="123456"
+              />
+              {error.otp && <p id="error_otp">{error.otp.join(",")}</p>}
+            </label>
+            <button
+              id="reset"
+              name="action"
+              value="reset"
+              type="submit"
+              class={nextAction != "send_msg" ? "hidden" : ""}
+            >
+              Go Back!
+            </button>
+            <button id="send_msg" name="action" value="send_msg" type="submit">
+              Text Me!
+            </button>
+          </fieldset>
           <label for="captcha">
-            <a href="https://capjs.js.org/">Cap</a>tcha
+            {/* prettier-ignore */}
+            <a href="https://capjs.js.org/" tabindex="-1">Cap</a>tcha
             <input type="hidden" id="captcha" name="captcha" />
             <div id="captchaStatus">
               <iconify-icon id="initIcon" icon="line-md:loading-loop" />
@@ -194,67 +254,6 @@ const msgValue = pickValue("msg");
             </div>
             {error.captcha && <p id="error_name">{error.captcha.join(",")}</p>}
           </label>
-          <label for="phone">
-            Phone
-            <input
-              type="text"
-              id="phone"
-              name="phone"
-              aria-describedby="error_phone"
-              value="2067452154"
-              
-            /><!-- value={phoneValue} -->
-            {error.phone && <p id="error_phone">{error.phone.join(",")}</p>}
-          </label>
-          <label for="msg">
-            Msg
-            <textarea
-              id="msg"
-              name="msg"
-              aria-describedby="error_msg"
-            >
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi augue eros, maximus nec ex sit amet, scelerisque interdum leo. Sed eu turpis sit amet dui congue efficitur. Duis eu laoreet risus, eget vestibulum lectus. 
-            </textarea>
-            <!-- <textarea
-              id="msg"
-              name="msg"
-              aria-describedby="error_msg"
-              placeholder="I think badblocks rocks!"
-            >
-              {msgValue}
-            </textarea> -->
-            {error.msg && <p id="error_msg">{error.msg.join(",")}</p>}
-          </label>
-          <button
-            id="send_otp"
-            name="action"
-            value="send_otp"
-            type="submit"
-            class={nextAction != "send_otp" ? "hidden" : undefined}
-          >
-            Send Verification Code!
-          </button>
-          <label for="otp">
-            Verification Code
-            <input
-              type="text"
-              id="otp"
-              name="otp"
-              aria-describedby="error_otp"
-              placeholder="123456"
-              disabled={nextAction != "send_msg"}
-            />
-            {error.otp && <p id="error_otp">{error.otp.join(",")}</p>}
-          </label>
-          <button
-            id="send_msg"
-            name="action"
-            value="send_msg"
-            type="submit"
-            disabled={nextAction != "send_msg"}
-          >
-            Text Me!
-          </button>
         </form>
       )) || <p>Your message has been sent successfully!</p>
     }

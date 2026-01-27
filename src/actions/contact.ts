@@ -61,16 +61,20 @@ const sendMsgAction = z.object({
   captcha: captcha_input,
 });
 
+const resetAction = z.object({
+  action: z.literal("reset"),
+});
+
 const formAction = z.discriminatedUnion("action", [
   sendOtpAction,
   sendMsgAction,
+  resetAction,
 ]);
 
 const submitActionDefinition = {
   input: formAction,
   handler: async (input: any, context: ActionAPIContext) => {
     if (!OTP_SUPER_SECRET_SALT || !ANDROID_SMS_GATEWAY_RECIPIENT_PHONE) {
-      console.log("Server variables are missing.");
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Server variables are missing.",
@@ -83,10 +87,9 @@ const submitActionDefinition = {
         (await CapServer.validateToken(input.captcha))
       )
     ) {
-      console.log("Invalid Captcha Token");
       throw new ActionError({
         code: "BAD_REQUEST",
-        message: "Invalid Captcha Token",
+        message: "Invalid Captcha Token.",
       });
     }
 
@@ -103,7 +106,7 @@ const submitActionDefinition = {
       }`;
 
       const result = await new SmsClient().sendSMS(phone, message);
-      console.log(JSON.stringify(result));
+
       if (result.success) {
         context.session?.set("phone", phone);
         context.session?.set("name", name);
@@ -113,12 +116,9 @@ const submitActionDefinition = {
           nextAction: "send_msg",
         };
       } else {
-        console.log(
-          "Verification code failed to send. Please try again later.",
-        );
         throw new ActionError({
           code: "SERVICE_UNAVAILABLE",
-          message: "Verification code failed to send. Please try again later.",
+          message: "Verification code failed to send: " + result.message,
         });
       }
     } else if (input.action === "send_msg") {
@@ -128,7 +128,6 @@ const submitActionDefinition = {
       const msg = await context.session?.get("msg");
 
       if (!name || !otp || !msg || !phone) {
-        console.log("Missing required fields.");
         throw new ActionError({
           code: "BAD_REQUEST",
           message: "Missing required fields.",
@@ -137,11 +136,15 @@ const submitActionDefinition = {
 
       const isVerified = verifyOtp(phone, OTP_SUPER_SECRET_SALT, otp);
       if (!isVerified) {
-        console.log("Invalid or expired verification code.");
-        throw new ActionError({
-          code: "BAD_REQUEST",
-          message: "Invalid or expired verification code.",
-        });
+        return {
+          nextAction: "send_msg",
+          error: "Invalid or expired verification code.",
+          field: "otp",
+        };
+        // throw new ActionError({
+        //   code: "BAD_REQUEST",
+        //   message: "Invalid or expired verification code.",
+        // });
       }
 
       const message = `Web message from ${name} ( ${phone} ):\n\n${msg}`;
@@ -162,9 +165,16 @@ const submitActionDefinition = {
         return {
           nextAction: "complete",
         };
+      } else if (input.action === "reset") {
+        context.session?.delete("phone");
+        context.session?.delete("name");
+        context.session?.delete("msg");
+
+        return {
+          nextAction: "send_otp",
+        };
       }
 
-      console.log("Message failed to send.");
       throw new ActionError({
         code: "SERVICE_UNAVAILABLE",
         message: "Message failed to send.",
