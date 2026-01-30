@@ -1,0 +1,152 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+---
+
+<Layout>
+  <title slot="head">Parallax Demo</title>
+  <style>
+    :root {
+      --scroll-multiplier: 5;
+      --theme: winternight;
+    }
+
+    .parallax-theme-winternight {
+      --layer-0-speed: 6250s;
+      --layer-1-speed: 1250s;
+      --layer-2-speed: 500s;
+      --layer-3-speed: 250s;
+      --layer-4-speed: 80s;
+      --layer-0-url: url("/parallax/winternight/0-sky.png");
+      --layer-1-url: url("/parallax/winternight/1-backmountain.png");
+      --layer-2-url: url("/parallax/winternight/2-midmountain.png");
+      --layer-3-url: url("/parallax/winternight/3-midforest.png");
+      --layer-4-url: url("/parallax/winternight/4-frontfloor.png");
+      --parallax-width: calc(3800px * 10);
+    }
+
+    .parallax-theme-sunnyvale-forest {
+      --layer-0-speed: 2000s;
+      --layer-1-speed: 400s;
+      --layer-2-speed: 50s;
+      --layer-0-url: url("/parallax/sunnyvale-forest/0-clouds.png");
+      --layer-1-url: url("/parallax/sunnyvale-forest/1-mountains.png");
+      --layer-2-url: url("/parallax/sunnyvale-forest/2-trees.png");
+      --parallax-width: calc(160px * 200);
+    }
+
+    .parallax-theme-city-destroyed {
+      --layer-0-speed: 1000s;
+      --layer-1-speed: 275s;
+      --layer-2-speed: 250s;
+      --layer-3-speed: 250s;
+      --layer-4-speed: 250s;
+      --layer-5-speed: 100s;
+      --layer-0-url: url("/parallax/city-destroyed/0-sky.png");
+      --layer-1-url: url("/parallax/city-destroyed/1-buildingssmoke.png");
+      --layer-2-url: url("/parallax/city-destroyed/2-water.png");
+      --layer-3-url: url("/parallax/city-destroyed/3-buildings.png");
+      --layer-4-url: url("/parallax/city-destroyed/4-buildingreflection.png");
+      --layer-5-url: url("/parallax/city-destroyed/5-frontsmoke.png");
+      --parallax-width: calc(3800px * 10);
+    }
+
+    .parallax-theme-city-destroyed .layer.layer-1,
+    .parallax-theme-city-destroyed .layer.layer-3,
+    .parallax-theme-city-destroyed .layer.layer-4 {
+      background-repeat: repeat-x;
+    }
+
+    .parallax-theme-city-destroyed .layer.layer-4 {
+      background-position-y: 16rem;
+    }
+
+    .parallax-container {
+      position: relative;
+      height: 30rem;
+      width: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: var(--parallax-width);
+      background-repeat: round;
+      background-position: bottom;
+      background-size: contain;
+    }
+
+    .layer-0 {
+      background-image: var(--layer-0-url);
+      z-index: 1;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-0-speed))
+        linear infinite;
+    }
+
+    .layer-1 {
+      background-image: var(--layer-1-url);
+      z-index: 2;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-1-speed))
+        linear infinite;
+    }
+
+    .layer-2 {
+      background-image: var(--layer-2-url);
+      z-index: 3;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-2-speed))
+        linear infinite;
+    }
+
+    .layer-3 {
+      background-image: var(--layer-3-url);
+      z-index: 4;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-3-speed))
+        linear infinite;
+    }
+
+    .layer-4 {
+      background-image: var(--layer-4-url);
+      z-index: 5;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-4-speed))
+        linear infinite;
+    }
+
+    .layer-5 {
+      background-image: var(--layer-5-url);
+      z-index: 6;
+      animation: scroll calc(var(--scroll-multiplier) * var(--layer-5-speed))
+        linear infinite;
+    }
+
+    @keyframes scroll {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+  <Fragment slot="content">
+    <article id="hero">
+      <div class="parallax-container" :class="'parallax-theme-' + theme">
+        <div class="layer layer-0"></div>
+        <div class="layer layer-1"></div>
+        <div class="layer layer-2"></div>
+        <div class="layer layer-3"></div>
+        <div class="layer layer-4"></div>
+        <div class="layer layer-5"></div>
+      </div>
+      <h2>Parallax Demo</h2>
+      <p>Pardon the dust!</p>
+      <select id="theme" x-model="theme">
+        <option value="winternight">Winternight</option>
+        <option value="sunnyvale-forest">SunnyVale</option>
+        <option value="city-destroyed">Apocalypse</option>
+      </select>
+    </article>
+  </Fragment>
+</Layout>

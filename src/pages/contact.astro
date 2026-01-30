@@ -80,9 +80,10 @@ const msgValue = pickValue("msg");
 <style>
   form {
     display: grid;
-    gap: 1rem;
+    row-gap: var(--stack-large);
+    column-gap: var(--gutter-large);
     width: 100%;
-    margin: 0 auto;
+    margin-inline: auto;
     grid-template-columns: repeat(2, 1fr);
     grid-template-areas:
       "header header"
@@ -91,15 +92,8 @@ const msgValue = pickValue("msg");
       "captcha otp"
       "lbtn rbtn";
   }
-  .hidden {
-    display: none;
-    visibility: hidden;
-  }
   #header {
     grid-area: header;
-  }
-  label {
-    text-align: left;
   }
   label[for="name"] {
     grid-area: name;
@@ -115,16 +109,13 @@ const msgValue = pickValue("msg");
   }
   label[for="captcha"] {
     grid-area: captcha;
-    a {
-      color: #000;
-    }
   }
   #captchaStatus {
-    padding: 0.8rem 0;
+    padding-block: calc(2px + (var(--stack-small) * 1));
+    cursor: text;
   }
-  button {
-    height: 39px;
-    padding: 8px 12px;
+  #statusText {
+    margin-inline-start: 0.5rem;
   }
   button#reset {
     grid-area: lbtn;
@@ -155,9 +146,6 @@ const msgValue = pickValue("msg");
   <title slot="head">Contact</title>
   <Fragment slot="content">
     <h2>Contact</h2>
-    <p><a href="https://kagi.com">Link Style 1</a></p><a href="https://kagi.com"
-      >Link Style 2</a
-    >
     {
       (nextAction != "complete" && (
         <form method="post" x-data="{}" action={actions.contact.submitForm}>
@@ -167,7 +155,7 @@ const msgValue = pickValue("msg");
                 {result?.error.message}
                 Please correct any errors and try again.
               </p>
-            )) || <p>Use the below form to shoot me a quick text!</p>}
+            )) || <p>Use this form to shoot me a quick text!</p>}
           </div>
           <fieldset id="send_otp_fields" disabled={nextAction != "send_otp"}>
             <label for="name">
@@ -177,7 +165,7 @@ const msgValue = pickValue("msg");
                 id="name"
                 name="name"
                 aria-describedby="name"
-                value="Bad Blocks"
+                placeholder="Alice Bob"
               />
               {error.name && <p id="error_name">{error.name.join(",")}</p>}
             </label>
@@ -188,14 +176,21 @@ const msgValue = pickValue("msg");
                 id="phone"
                 name="phone"
                 aria-describedby="error_phone"
-                value="2067452154"
+                placeholder="555-555-5555"
               />
               {error.phone && <p id="error_phone">{error.phone.join(",")}</p>}
             </label>
             <label for="msg">
               Msg
-              {/* prettier-ignore */}
-              <textarea id="msg" name="msg" aria-describedby="error_msg">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tortor neque, ullamcorper molestie fermentum quis, vulputate et lacus.</textarea>
+              <div class="textarea-wrapper">
+                <textarea
+                  id="msg"
+                  name="msg"
+                  oninput="this.parentNode.dataset.replicatedValue = this.value"
+                  aria-describedby="error_msg"
+                  placeholder="I think badblocks rocks! Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                />
+              </div>
               {error.msg && <p id="error_msg">{error.msg.join(",")}</p>}
             </label>
             <button
@@ -206,18 +201,17 @@ const msgValue = pickValue("msg");
               disabled={nextAction != "send_otp"}
               class={nextAction != "send_otp" ? "hidden" : ""}
             >
-              Send Verification Code!
+              Verify Me!
             </button>
           </fieldset>
           <fieldset id="send_msg_fields" disabled={nextAction != "send_msg"}>
-            <label for="otp" class={nextAction != "send_msg" ? "hidden" : ""}>
+            <label for="otp">
               Verification Code
               <input
                 type="text"
                 id="otp"
                 name="otp"
                 aria-describedby="error_otp"
-                placeholder="123456"
               />
               {error.otp && <p id="error_otp">{error.otp.join(",")}</p>}
             </label>
@@ -231,7 +225,7 @@ const msgValue = pickValue("msg");
               Go Back!
             </button>
             <button id="send_msg" name="action" value="send_msg" type="submit">
-              Text Me!
+              Send ittt!
             </button>
           </fieldset>
           <label for="captcha">
@@ -239,23 +233,25 @@ const msgValue = pickValue("msg");
             <a href="https://capjs.js.org/" tabindex="-1">Captcha</a>
             <input type="hidden" id="captcha" name="captcha" />
             <div id="captchaStatus">
-              <iconify-icon id="initIcon" icon="line-md:loading-loop" />
-              <iconify-icon
-                id="completeIcon"
-                icon="line-md:circle-to-confirm-circle-transition"
-                class="hidden"
-              />
-              <iconify-icon
-                id="errorIcon"
-                icon="line-md:alert-circle-loop"
-                class="hidden"
-              />
-              <iconify-icon
-                id="progressIcon"
-                icon="line-md:speedometer-loop"
-                class="hidden"
-              />
-              &nbsp;<span id="statusText">Loading...</span>
+              <div class="iconBox">
+                <iconify-icon id="initIcon" icon="line-md:loading-loop" />
+                <iconify-icon
+                  id="completeIcon"
+                  icon="line-md:circle-to-confirm-circle-transition"
+                  class="hidden"
+                />
+                <iconify-icon
+                  id="errorIcon"
+                  icon="line-md:alert-circle-loop"
+                  class="hidden"
+                />
+                <iconify-icon
+                  id="progressIcon"
+                  icon="line-md:speedometer-loop"
+                  class="hidden"
+                />
+              </div>
+              <span id="statusText">Loading...</span>
             </div>
             {error.captcha && <p id="error_name">{error.captcha.join(",")}</p>}
           </label>
