@@ -1,0 +1,84 @@
+services:
+  badblocks-personal-site:
+    image: ${IMAGE_NAME}:latest
+    restart: always
+    container_name: badblocks-personal-site
+    ports:
+      - "4321:4321"
+    networks:
+      - proxynet
+    env_file:
+      - .env
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "curl",
+    #       "-f",
+    #       "-s",
+    #       "--max-time",
+    #       "5",
+    #       "http://localhost:4321/health",
+    #     ]
+    #   interval: 30s
+    #   timeout: 15s
+    #   retries: 3
+    #   start_period: 120s
+  # wireguard:
+  #   image: qmcgaw/gluetun
+  #   cap_add:
+  #     - NET_ADMIN
+  #   container_name: wireguard
+  #   environment:
+  #     - VPN_SERVICE_PROVIDER=custom
+  #     - VPN_TYPE=wireguard
+  #     - HTTPPROXY=on
+  #   expose:
+  #     - "8888"
+  #   env_file:
+  #     - .env
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   restart: unless-stopped
+  #   networks:
+  #     - proxynet
+  #   healthcheck:
+  #     test: ss["CMD", "ping", "-c", "1", "-W", "3", "$$ANDROID_SMS_GATEWAY_IP"]
+  #     interval: 30s
+  #     timeout: 15s
+  #     retries: 3
+  #     start_period: 60s
+  certbot:
+    image: serversideup/certbot-dns-cloudflare
+    volumes:
+      - ./certs:/etc/letsencrypt
+    environment:
+      CLOUDFLARE_API_TOKEN: "${CLOUDFLARE_API_TOKEN}"
+      CERTBOT_EMAIL: "${CERTBOT_EMAIL}"
+      CERTBOT_DOMAINS: "${DOMAIN}"
+  haproxy:
+    image: haproxy:3.2
+    stop_signal: SIGTERM
+    container_name: haproxy
+    env_file:
+      - .env
+    command: ["haproxy", "-f", "/usr/local/etc/haproxy"]
+    ports:
+      - "${PUBLIC_IP}:80:80"
+      - "${PUBLIC_IP}:443:443"
+      - "${PUBLIC_IP}:8404:8404"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./certs:/certs:ro
+    restart: always
+    networks:
+      - proxynet
+  #   healthcheck:
+  #     test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+networks:
+  proxynet:
+    name: proxynet
+    driver: bridge
