@@ -4,13 +4,16 @@ export const prerender = false;
 
 export const POST: APIRoute = async () => {
   try {
+    return new Response(JSON.stringify(await cap.createChallenge()), {
+      status: 200,
+    });
+  } catch (error) {
     return new Response(
-      JSON.stringify(await cap.createChallenge({ challengeDifficulty: 4 })),
-      {
-        status: 200,
-      },
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      { status: 400 },
     );
-  } catch {
-    return new Response(JSON.stringify({ success: false }), { status: 400 });
   }
 };

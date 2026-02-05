@@ -3,8 +3,8 @@ services:
     image: ${IMAGE_NAME}:latest
     restart: always
     container_name: badblocks-personal-site
-    ports:
-      - "4321:4321"
+    volumes:
+      - /srv/badblocks-personal-site/db:/db
     networks:
       - proxynet
     env_file:
@@ -24,32 +24,33 @@ services:
     #   timeout: 15s
     #   retries: 3
     #   start_period: 120s
-  # wireguard:
-  #   image: qmcgaw/gluetun
-  #   cap_add:
-  #     - NET_ADMIN
-  #   container_name: wireguard
-  #   environment:
-  #     - VPN_SERVICE_PROVIDER=custom
-  #     - VPN_TYPE=wireguard
-  #     - HTTPPROXY=on
-  #   expose:
-  #     - "8888"
-  #   env_file:
-  #     - .env
-  #   devices:
-  #     - /dev/net/tun:/dev/net/tun
-  #   restart: unless-stopped
-  #   networks:
-  #     - proxynet
+  wireguard:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    container_name: wireguard
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      - HTTPPROXY=on
+    expose:
+      - "8888"
+    env_file:
+      - .env
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    restart: unless-stopped
+    networks:
+      - proxynet
   #   healthcheck:
-  #     test: ss["CMD", "ping", "-c", "1", "-W", "3", "$$ANDROID_SMS_GATEWAY_IP"]
+  #     test: ["CMD", "ping", "-c", "1", "-W", "3", "$$ANDROID_SMS_GATEWAY_IP"]
   #     interval: 30s
   #     timeout: 15s
   #     retries: 3
   #     start_period: 60s
   certbot:
     image: serversideup/certbot-dns-cloudflare
+    container_name: certbot
     volumes:
       - ./certs:/etc/letsencrypt
     environment:

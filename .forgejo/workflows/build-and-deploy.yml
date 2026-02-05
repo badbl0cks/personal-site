@@ -10,43 +10,56 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt-get update && apt-get install gettext -y
+          apt-get update && apt-get install gettext dnsutils iputils-ping -y
       - name: Check out repository
         uses: actions/checkout@v4
-      # - name: Expose repo secrets and vars as shell variables
-      #   env:
-      #     SECRETS_CONTEXT: ${{ toJSON(secrets) }}
-      #     VARS_CONTEXT: ${{ toJSON(vars) }}
-      #   run: |
-      #     # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      #     # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
-      #     # # EOF randomness is to account for empty secrets and vars
-      #     EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-      #     to_envs() { jq -r "to_entries[] | \"\(.key)<<$EOF\n\(.value)\n$EOF\n\""; }
-      #     echo "$VARS_CONTEXT" | to_envs >> $GITHUB_ENV
-      #     echo "$SECRETS_CONTEXT" | to_envs >> $GITHUB_ENV
       - name: Substitute environment variables in .env.example and write to .env
         env:
           CERTBOT_EMAIL: ${{secrets.CERTBOT_EMAIL}}
           CLOUDFLARE_API_TOKEN: ${{secrets.CLOUDFLARE_API_TOKEN}}
-          DOMAIN: ${{secrets.DOMAIN}}
-          PUBLIC_IP: ${{secrets.PUBLIC_IP}}
-          ANDROID_SMS_GATEWAY_IP: ${{secrets.ANDROID_SMS_GATEWAY_IP}}
-          ANDROID_SMS_GATEWAY_URL: ${{secrets.ANDROID_SMS_GATEWAY_URL}}
           ANDROID_SMS_GATEWAY_LOGIN: ${{secrets.ANDROID_SMS_GATEWAY_LOGIN}}
           ANDROID_SMS_GATEWAY_PASSWORD: ${{secrets.ANDROID_SMS_GATEWAY_PASSWORD}}
           ANDROID_SMS_GATEWAY_RECIPIENT_PHONE: ${{secrets.ANDROID_SMS_GATEWAY_RECIPIENT_PHONE}}
-          ASTRO_DB_REMOTE_URL: ${{secrets.ASTRO_DB_REMOTE_URL}}
           OTP_SUPER_SECRET_SALT: ${{secrets.OTP_SUPER_SECRET_SALT}}
-          IMAGE_FILENAME: ${{secrets.IMAGE_FILENAME}}
-          IMAGE_NAME: ${{secrets.IMAGE_NAME}}
           SSH_USER: ${{secrets.SSH_USER}}
-          SSH_PORT: ${{secrets.SSH_PORT}}
-          SSH_HOST: ${{secrets.SSH_HOST}}
-          SSH_KEY: ${{secrets.SSH_KEY}}
           SSH_KNOWN_HOST: ${{secrets.SSH_KNOWN_HOST}}
+          ASTRO_DB_REMOTE_URL: ${{secrets.ASTRO_DB_REMOTE_URL}}
+          SSH_KEY: ${{secrets.SSH_KEY}}
+          WIREGUARD_PRIVATE_KEY: ${{secrets.WIREGUARD_PRIVATE_KEY}}
+          WIREGUARD_PUBLIC_KEY: ${{secrets.WIREGUARD_PUBLIC_KEY}}
+          DNS_SERVER: ${{vars.DNS_SERVER}}
+          DNS_ADDRESS: ${{vars.DNS_ADDRESS}}
+          DOMAIN: ${{vars.DOMAIN}}
+          PUBLIC_IP: ${{vars.PUBLIC_IP}}
+          ANDROID_SMS_GATEWAY_IP: ${{vars.ANDROID_SMS_GATEWAY_IP}}
+          ANDROID_SMS_GATEWAY_URL: ${{vars.ANDROID_SMS_GATEWAY_URL}}
+          IMAGE_FILENAME: ${{vars.IMAGE_FILENAME}}
+          IMAGE_NAME: ${{vars.IMAGE_NAME}}
+          SSH_PORT: ${{vars.SSH_PORT}}
+          SSH_HOST: ${{vars.SSH_HOST}}
+          WIREGUARD_ALLOWED_IPS: ${{vars.WIREGUARD_ALLOWED_IPS}}
+          WIREGUARD_ADDRESSES: ${{vars.WIREGUARD_ADDRESSES}}
+          WIREGUARD_ENDPOINT_HOST: ${{vars.WIREGUARD_ENDPOINT_HOST}}
+          WIREGUARD_ENDPOINT_PORT: ${{vars.WIREGUARD_ENDPOINT_PORT}}
+          HEALTH_TARGET_ADDRESSES: ${{vars.HEALTH_TARGET_ADDRESSES}}
+          HEALTH_ICMP_TARGET_IPS: ${{vars.HEALTH_ICMP_TARGET_IPS}}
+          VERSION_INFORMATION: ${{vars.VERSION_INFORMATION}}
+          PUBLICIP_ENABLED: ${{vars.PUBLICIP_ENABLED}}
         run: |
           envsubst < .env.example > .env
+      # - name: Export secrets and variables to $GITHUB_ENV
+      #   env:
+      #     SECRETS_CONTEXT: ${{ toJSON(secrets) }}
+      #     VARS_CONTEXT: ${{ toJSON(vars) }}
+      #   run: |
+      #     EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+      #     to_envs() { jq -r "to_entries[] | \"\(.key)<<$EOF\n\(.value)\n$EOF\n\""; }
+      #     echo "$VARS_CONTEXT" | to_envs >> $GITHUB_ENV
+      #     echo "$SECRETS_CONTEXT" | to_envs >> $GITHUB_ENV
+      # - name: Update .env with secrets and variables
+      #   run: |
+      #     envsubst < .env.example > .env
+      #     cat .env
       - name: Run build script
         run: |
           cd cicd/scripts

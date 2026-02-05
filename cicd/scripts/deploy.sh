@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 #######################
 # VARIABLES           #
@@ -16,7 +17,7 @@ echo "${SSH_KNOWN_HOST}" > ${HOME}/.ssh/known_hosts-${SSH_HOST//./_}
 chmod -R 600 ${HOME}/.ssh/
 chmod 700 ${HOME}/.ssh
 
-grep -q "Host ${SSH_HOST}" ${HOME}/.ssh/config || cat >> ${HOME}/.ssh/config <<EOF
+grep -q "Host ${SSH_HOST}" ${HOME}/.ssh/config 2>&1 1>/dev/null || cat >> ${HOME}/.ssh/config <<EOF
 Host ${SSH_HOST}
     HostName ${SSH_HOST}
     User ${SSH_USER}
@@ -31,6 +32,10 @@ Host ${SSH_HOST}
     ConnectTimeout 10
     ServerAliveInterval 10
 EOF
+
+WIREGUARD_ENDPOINT_IP=$(dig +short $WIREGUARD_ENDPOINT_HOST | tail -n1)
+[[ -z ${WIREGUARD_ENDPOINT_IP} ]] && echo "Failed to resolve IP address for WIREGUARD_ENDPOINT_HOST" >&2 && exit 1
+echo "WIREGUARD_ENDPOINT_IP=${WIREGUARD_ENDPOINT_IP}" >> .env
 
 DOCKER_HOST=ssh://${SSH_HOST} docker load -i ${IMAGE_FILENAME}
 

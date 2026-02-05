@@ -18,12 +18,13 @@ export default defineConfig({
   }),
   // adapter: bun(),
   // output: "static",
+  compressHTML: false,
   devToolbar: { enabled: false },
   prefetch: {
     prefetchAll: true,
   },
   security: {
-    checkOrigin: true,
+    checkOrigin: false,
   },
   session: {
     driver: "lru-cache",
