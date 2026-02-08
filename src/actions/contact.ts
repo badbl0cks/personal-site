@@ -4,7 +4,7 @@ import type { ActionAPIContext } from "astro:actions";
 import validator from "validator";
 import SmsClient from "@lib/SmsGatewayClient.ts";
 import Otp, { verifyOtp } from "@lib/Otp.ts";
-import CapServer from "@lib/CapAdapter";
+import { createCap } from "@lib/CapAdapter";
 import {
   OTP_SUPER_SECRET_SALT,
   ANDROID_SMS_GATEWAY_RECIPIENT_PHONE,
@@ -81,10 +81,12 @@ const submitActionDefinition = {
       });
     }
 
+    const cap = createCap(context.session ?? null);
+
     if (
       !(
         /^[a-fA-F0-9]{16}:[a-fA-F0-9]{30}$/.test(input.captcha) &&
-        (await CapServer.validateToken(input.captcha))
+        (await cap.validateToken(input.captcha))
       )
     ) {
       throw new ActionError({

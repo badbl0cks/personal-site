@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro";
-import cap from "@lib/CapAdapter";
+import { createCap } from "@lib/CapAdapter";
 export const prerender = false;
 
-export const POST: APIRoute = async () => {
+export const POST: APIRoute = async (context) => {
   try {
+    const cap = createCap(context.session ?? null);
     return new Response(JSON.stringify(await cap.createChallenge()), {
       status: 200,
     });
