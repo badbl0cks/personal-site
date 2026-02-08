@@ -24,12 +24,15 @@ ENV NODE_ENV=production
 #RUN bun test
 RUN bun run build-remote
 
-# copy production dependencies and source code into final image
-FROM base AS release
+# copy production dependencies and source code into final image 
+# and run with node to avoid some random issues with bun
+# (e.g. bun's fetch doesn't support dispatchers)
+FROM node:20-slim AS release
+WORKDIR /usr/src/app
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/dist ./dist
-COPY --from=prerelease /usr/src/app/package.json .
+COPY --from=prerelease /usr/src/app/package.json ./
 
-USER bun
+USER node
 EXPOSE 4321
-ENTRYPOINT ["bun", "run", "./dist/server/entry.mjs"]
+ENTRYPOINT ["node", "./dist/server/entry.mjs"]

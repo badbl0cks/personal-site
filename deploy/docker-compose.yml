@@ -29,6 +29,7 @@ services:
     cap_add:
       - NET_ADMIN
     container_name: wireguard
+    hostname: wireguard
     environment:
       - VPN_SERVICE_PROVIDER=custom
       - VPN_TYPE=wireguard

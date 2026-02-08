@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "start": "bun run ./dist/server/entry.mjs",
+    "start-bun": "bun run ./dist/server/entry.mjs",
+    "start": "node ./dist/server/entry.mjs",
     "check": "astro check",
     "build-only": "astro build",
     "build": "astro check && astro build",
