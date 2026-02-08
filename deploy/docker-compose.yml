@@ -4,7 +4,7 @@ services:
     restart: always
     container_name: badblocks-personal-site
     volumes:
-      - /srv/badblocks-personal-site/db:/db
+      - ./db:/db
     networks:
       - proxynet
     env_file:
@@ -70,7 +70,7 @@ services:
       - "${PUBLIC_IP}:443:443"
       - "${PUBLIC_IP}:8404:8404"
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./haproxy:/usr/local/etc/haproxy:ro
       - ./certs:/certs:ro
     restart: always
     networks:

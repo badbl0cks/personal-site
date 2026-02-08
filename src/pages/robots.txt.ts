@@ -69,6 +69,9 @@ DisallowAITraining: /
 Content-Usage: ai=n
 Allow: /
 
+User-Agent: *
+Disallow: /blokmeplz/
+
 Sitemap: ${sitemapURL.href}
 `;
 
