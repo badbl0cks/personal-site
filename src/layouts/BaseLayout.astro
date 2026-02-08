@@ -6,13 +6,7 @@
     <link
       rel="preload"
       as="font"
-      href="unscii-16.woff"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="preload"
-      as="font"
-      href="unscii-8.woff"
+      href="/unscii-16.woff"
       crossorigin="anonymous"
     />
     <link rel="preload" href="reset.css" as="style" />
@@ -20,31 +14,21 @@
     <link rel="stylesheet" type="text/css" href="/style.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌕</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100px' height='100px'><rect x='0' y='0' width='100' height='100' rx='15' ry='15' style='fill: rgb(0,0,0);'/><foreignObject width='100' height='100'><div xmlns='http://www.w3.org/1999/xhtml' style='width:100px;height:100px;line-height:100px;text-align:center;vertical-align:middle;color:transparent;text-shadow: 0 0 rgb(0 255 0);font-size:80px;'>👾</div></foreignObject></svg>"
     />
     <meta name="generator" content={Astro.generator} />
     <meta name="darkreader-lock" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script>
-      const yearSpan = document.querySelector("#copyright-year");
-      if (yearSpan) {
-        yearSpan.innerHTML = new Date().getFullYear().toString();
-      }
-    </script>
     <slot name="head" />
   </head>
-  <body x-data="{ theme: 'winternight'}">
+  <body>
+    <script>
+      import "iconify-icon";
+    </script>
     <header>
       <h1>badblocks.dev</h1>
       <nav>
         <ul>
-          <!-- <li>
-            <select id="theme" x-model="theme">
-              <option value="winternight">Winternight</option>
-              <option value="sunnyvale-forest">SunnyVale</option>
-              <option value="city-destroyed">Apocalypse</option>
-            </select>
-          </li> -->
           <li><a href="/">Home</a></li>
           <li><a href="/contact">Contact</a></li>
           <li><a href="https://git.badblocks.dev" target="_blank">Git</a></li>
@@ -56,10 +40,18 @@
     </main>
     <footer>
       <p>
-        &copy; <span id="copyright-year">2026</span>
-        badblocks
+        <a
+          href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          target="_blank"
+          ><iconify-icon icon="fa7-brands:creative-commons"
+          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-by"
+          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-nc"
+          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-sa"
+          ></iconify-icon></a
+        >
+        <br />
+        Made from scratch with BAHA: Bun, Astro, Htmx, and Alpine!
       </p>
-      <p>Made from scratch with BAHA: Bun, Astro, Htmx, and Alpine!</p>
     </footer>
   </body>
 </html>
