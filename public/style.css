@@ -1,6 +1,6 @@
-/* 
-Inspired by: 
-  - Mike Mai @ https://mikemai.net/ 
+/*
+Inspired by:
+  - Mike Mai @ https://mikemai.net/
   - David Bushell @ https://dbushell.com/
   - Viznut @ http://viznut.fi/
 */
@@ -118,27 +118,9 @@ Inspired by:
     }
   }
 
-  @media (prefers-color-scheme: light) {
-    :root {
-      --color-fg: #404040;
-      --color-bg: #f4f4f4;
-      --color-accent: crimson;
-    }
-  }
+  @media (prefers-color-scheme: light) {}
 
-  @media (prefers-contrast: more) {
-    :root {
-      --color-fg: white;
-      --color-bg: black;
-      --color-accent: cyan;
-    }
-  }
+  @media (prefers-contrast: more) {}
 
-  @media (prefers-color-scheme: light) and (prefers-contrast: more) {
-    :root {
-      --color-fg: black;
-      --color-bg: white;
-      --color-accent: firebrick;
-    }
-  }
+  @media (prefers-reduced-motion: reduce) {}
 }
