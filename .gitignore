@@ -21,3 +21,13 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+#temporarily hide extra parallax files
+public/parallax/city-night/
+public/parallax/desert/
+public/parallax/forest/
+public/parallax/iceberg/
+public/parallax/moon/
+public/parallax/ocean/
+public/parallax/rural/
+public/parallax/skies/
