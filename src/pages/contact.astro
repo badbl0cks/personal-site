@@ -26,124 +26,126 @@ const phoneValue = pickValue("phone");
 const msgValue = pickValue("msg");
 ---
 
-<script>
-  import Cap from "@cap.js/widget";
-  import "iconify-icon";
-
-  const captchaInput = document.querySelector("input[id='captcha']");
-  const captchaStatus = document.querySelector("#captchaStatus");
-  const statusText = captchaStatus?.querySelector("#statusText");
-  const initIcon = captchaStatus?.querySelector("#initIcon");
-  const completeIcon = captchaStatus?.querySelector("#completeIcon");
-  const errorIcon = captchaStatus?.querySelector("#errorIcon");
-  const progressIcon = captchaStatus?.querySelector("#progressIcon");
-  const cap = new Cap({
-    apiEndpoint: "/cap/",
-  });
-
-  if (
-    captchaStatus &&
-    statusText &&
-    initIcon &&
-    completeIcon &&
-    errorIcon &&
-    progressIcon
-  ) {
-    cap.addEventListener("solve", function (e) {
-      const humanness = Math.round((85 + Math.random() * 14.9) * 10) / 10;
-      statusText.textContent = `${humanness}% human. Good enough!`;
-      progressIcon.classList.add("hidden");
-      errorIcon.classList.add("hidden");
-      initIcon.classList.add("hidden");
-      completeIcon.classList.remove("hidden");
-    });
-    cap.addEventListener("error", function (e) {
-      statusText.textContent = "Oops! We crashed!";
-      progressIcon.classList.add("hidden");
-      completeIcon.classList.add("hidden");
-      initIcon.classList.add("hidden");
-      errorIcon.classList.remove("hidden");
-    });
-    cap.addEventListener("progress", (event) => {
-      statusText.textContent = `Weighing your humanity... ${event.detail.progress}%`;
-      errorIcon.classList.add("hidden");
-      completeIcon.classList.add("hidden");
-      initIcon.classList.add("hidden");
-      progressIcon.classList.remove("hidden");
-    });
-  }
-  if (captchaInput && "value" in captchaInput) {
-    const { token } = await cap.solve();
-    captchaInput.value = token;
-  }
-</script>
-<style>
-  form {
-    display: grid;
-    row-gap: var(--stack-large);
-    column-gap: var(--gutter-large);
-    width: 100%;
-    margin-inline: auto;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-areas:
-      "header header"
-      "name phone"
-      "msg msg"
-      "captcha otp"
-      "lbtn rbtn";
-  }
-  #header {
-    grid-area: header;
-  }
-  label[for="name"] {
-    grid-area: name;
-  }
-  label[for="phone"] {
-    grid-area: phone;
-  }
-  label[for="msg"] {
-    grid-area: msg;
-  }
-  label[for="otp"] {
-    grid-area: otp;
-  }
-  label[for="captcha"] {
-    grid-area: captcha;
-  }
-  #captchaStatus {
-    padding-block: calc(2px + (var(--stack-small) * 1));
-    cursor: text;
-  }
-  #statusText {
-    margin-inline-start: 0.5rem;
-  }
-  button#reset {
-    grid-area: lbtn;
-  }
-  button#send_otp {
-    grid-area: lbtn;
-  }
-  button#send_msg {
-    grid-area: rbtn;
-  }
-  fieldset {
-    display: contents;
-  }
-  .spin {
-    animation: spin 4s linear infinite;
-    position: relative;
-  }
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-</style>
 <Layout>
   <title slot="head">Contact</title>
+  <Fragment slot="head">
+    <script>
+      import Cap from "@cap.js/widget";
+      import "iconify-icon";
+
+      const captchaInput = document.querySelector("input[id='captcha']");
+      const captchaStatus = document.querySelector("#captchaStatus");
+      const statusText = captchaStatus?.querySelector("#statusText");
+      const initIcon = captchaStatus?.querySelector("#initIcon");
+      const completeIcon = captchaStatus?.querySelector("#completeIcon");
+      const errorIcon = captchaStatus?.querySelector("#errorIcon");
+      const progressIcon = captchaStatus?.querySelector("#progressIcon");
+      const cap = new Cap({
+        apiEndpoint: "/cap/",
+      });
+
+      if (
+        captchaStatus &&
+        statusText &&
+        initIcon &&
+        completeIcon &&
+        errorIcon &&
+        progressIcon
+      ) {
+        cap.addEventListener("solve", function (e) {
+          const humanness = Math.round((85 + Math.random() * 14.9) * 10) / 10;
+          statusText.textContent = `${humanness}% human. Good enough!`;
+          progressIcon.classList.add("hidden");
+          errorIcon.classList.add("hidden");
+          initIcon.classList.add("hidden");
+          completeIcon.classList.remove("hidden");
+        });
+        cap.addEventListener("error", function (e) {
+          statusText.textContent = "Oops! We crashed!";
+          progressIcon.classList.add("hidden");
+          completeIcon.classList.add("hidden");
+          initIcon.classList.add("hidden");
+          errorIcon.classList.remove("hidden");
+        });
+        cap.addEventListener("progress", (event) => {
+          statusText.textContent = `Weighing your humanity... ${event.detail.progress}%`;
+          errorIcon.classList.add("hidden");
+          completeIcon.classList.add("hidden");
+          initIcon.classList.add("hidden");
+          progressIcon.classList.remove("hidden");
+        });
+      }
+      if (captchaInput && "value" in captchaInput) {
+        const { token } = await cap.solve();
+        captchaInput.value = token;
+      }
+    </script>
+    <style>
+      form {
+        display: grid;
+        row-gap: var(--stack-large);
+        column-gap: var(--gutter-large);
+        width: 100%;
+        margin-inline: auto;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas:
+          "header header"
+          "name phone"
+          "msg msg"
+          "captcha otp"
+          "lbtn rbtn";
+      }
+      #header {
+        grid-area: header;
+      }
+      label[for="name"] {
+        grid-area: name;
+      }
+      label[for="phone"] {
+        grid-area: phone;
+      }
+      label[for="msg"] {
+        grid-area: msg;
+      }
+      label[for="otp"] {
+        grid-area: otp;
+      }
+      label[for="captcha"] {
+        grid-area: captcha;
+      }
+      #captchaStatus {
+        padding-block: calc(2px + (var(--stack-small) * 1));
+        cursor: text;
+      }
+      #statusText {
+        margin-inline-start: 0.5rem;
+      }
+      button#reset {
+        grid-area: lbtn;
+      }
+      button#send_otp {
+        grid-area: lbtn;
+      }
+      button#send_msg {
+        grid-area: rbtn;
+      }
+      fieldset {
+        display: contents;
+      }
+      .spin {
+        animation: spin 4s linear infinite;
+        position: relative;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </Fragment>
   <Fragment slot="content">
     <h2>Contact</h2>
     {
