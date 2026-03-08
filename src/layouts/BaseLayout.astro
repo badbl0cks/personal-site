@@ -1,34 +1,23 @@
 <!doctype html>
+<!--prettier-ignore-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="preload"
-      as="font"
-      href="/unscii-16.woff"
-      crossorigin="anonymous"
-    />
+    <link rel="preload" href="/unscii-16.woff" as="font" crossorigin="anonymous" />
     <link rel="preload" href="reset.css" as="style" />
     <link rel="preload" href="theme.css" as="style" />
     <link rel="stylesheet" type="text/css" href="/style.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100px' height='100px'><rect x='0' y='0' width='100' height='100' rx='15' ry='15' style='fill: rgb(0,0,0);'/><foreignObject width='100' height='100'><div xmlns='http://www.w3.org/1999/xhtml' style='width:100px;height:100px;line-height:100px;text-align:center;vertical-align:middle;color:transparent;text-shadow: 0 0 rgb(0 255 0);font-size:80px;'>👾</div></foreignObject></svg>"
-    />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100px' height='100px'><rect x='0' y='0' width='100' height='100' rx='15' ry='15' style='fill: rgb(0,0,0);'/><foreignObject width='100' height='100'><div xmlns='http://www.w3.org/1999/xhtml' style='width:100px;height:100px;line-height:100px;text-align:center;vertical-align:middle;color:transparent;text-shadow: 0 0 rgb(0 255 0);font-size:80px;'>👾</div></foreignObject></svg>"/>
     <meta name="generator" content={Astro.generator} />
     <meta name="darkreader-lock" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script
-      data-goatcounter="https://badblocks.goatcounter.com/count"
-      async
-      src="//gc.zgo.at/count.js"></script>
-    <script>
-      import "iconify-icon";
-    </script>
+    <script is:inline src="/htmz.js"></script>
+    <script is:inline async src="/goat.js" data-goatcounter="https://badblocks.goatcounter.com/count"></script>
     <slot name="head" />
   </head>
   <body>
+    <iframe hidden="" name="htmz" onload="window.htmz(this)"></iframe>
     <header>
       <h1>badblocks.dev</h1>
       <nav>
@@ -44,17 +33,11 @@
     </main>
     <footer>
       <p>
-        <a
-          href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
-          target="_blank"
-          ><iconify-icon icon="fa7-brands:creative-commons"
-          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-by"
-          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-nc"
-          ></iconify-icon><iconify-icon icon="fa7-brands:creative-commons-sa"
-          ></iconify-icon></a
-        >
-        <br />
-        Made from scratch with BAHA: Bun, Astro, Htmx, and Alpine!
+        <a href="https://opensource.org/license/mit" target="_blank">
+            <img src="/mit.svg" title="MIT Licensed" alt="MIT License Logo" width="24" height="24" role="img">
+        </a>
+        <br>
+        Made from scratch with BAHz: Bun, Astro, and Htmz!
       </p>
     </footer>
   </body>

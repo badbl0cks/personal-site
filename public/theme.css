@@ -141,6 +141,20 @@ a {
     text-decoration: none;
   }
 }
+footer a {
+  text-decoration: none;
+  width: fit-content;
+  display: inline-block;
+  margin: 0 auto;
+  padding: 0;
+
+  &:hover::before {
+    content: none;
+  }
+  &:hover::after {
+    content: none;
+  }
+}
 ul {
   list-style-type: square;
 }
@@ -159,8 +173,8 @@ label:has(> input[type="radio"]) {
   display: flex;
   margin-block: var(--stack-large);
 }
-/* TODO: use textarea-wrapper strategy to implement invisible inputs idea, 
-but have the text-glow effect done on the ::after pseudo-element and hide 
+/* TODO: use textarea-wrapper strategy to implement invisible inputs idea,
+but have the text-glow effect done on the ::after pseudo-element and hide
 the input when it isnt focused, and swap when focused */
 input[type="text"],
 input[type="email"],
