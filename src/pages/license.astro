@@ -1,0 +1,35 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+import fs from "node:fs";
+
+const txtToHtml = (string: string) => {
+  return string
+    .replace(/[^\x0A\x20-\x7E]/g, "") //remove non-printable ascii chars, except newline
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+    .replaceAll("\n\n", "<br><br>");
+};
+
+const license_file_contents = txtToHtml(
+  fs.readFileSync("./LICENSE", {
+    encoding: "utf8",
+  }),
+);
+---
+
+<Layout>
+  <title slot="head">LICENSE</title>
+  <Fragment slot="main">
+    <header>
+      <h1>
+        <a href="https://opensource.org/license/mit" target="_blank"
+          >MIT License</a
+        >
+      </h1>
+    </header>
+    <p set:html={license_file_contents} />
+  </Fragment>
+</Layout>
