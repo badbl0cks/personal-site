@@ -18,8 +18,8 @@
   </head>
   <body>
     <iframe hidden="" name="htmz" onload="window.htmz(this)"></iframe>
-    <header>
-      <h1>badblocks.dev</h1>
+    <header id="header">
+      <p>badblocks.dev</p>
       <nav>
         <ul>
           <li><a href="/">Home</a></li>
@@ -28,12 +28,12 @@
         </ul>
       </nav>
     </header>
-    <main id="content">
-      <slot name="content" />
+    <main id="main">
+      <slot name="main" />
     </main>
     <footer>
       <p>
-        <a href="https://opensource.org/license/mit" target="_blank">
+        <a href="/license">
             <img src="/mit.svg" title="MIT Licensed" alt="MIT License Logo" width="24" height="24" role="img">
         </a>
         <br>

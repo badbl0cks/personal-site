@@ -4,7 +4,8 @@ h1.giga {
 h1.mega {
   font-size: var(--pt-canon);
 }
-h1 {
+h1,
+header > p {
   font-size: var(--pt-double-great-primer);
 }
 h2 {
@@ -417,7 +418,7 @@ textarea,
   display: grid;
 }
 .textarea-wrapper::after {
-  content: attr(data-replicated-value) " "; /* Needed to preventy jumpy behavior */
+  content: attr(data-replicated-value) " "; /* Needed to prevent jumpy behavior */
   visibility: hidden;
   white-space: pre-wrap;
 }
@@ -461,6 +462,10 @@ button:active:enabled,
 input[type="submit"]:active:enabled,
 input[type="reset"]:active:enabled {
   background-color: var(--color-accent-bright);
+}
+
+svg {
+  fill: currentColor;
 }
 
 /*input[type="checkbox"],
